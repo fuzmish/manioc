@@ -1,0 +1,12 @@
+{
+    "dockerFile": "./Dockerfile",
+    "extensions": [
+        "golang.Go",
+        "mhutchie.git-graph",
+        "eamodio.gitlens",
+        "ms-vscode.live-server"
+    ],
+    "containerEnv": {
+        "GIT_EDITOR": "code --wait"
+    }
+}
