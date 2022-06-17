@@ -257,7 +257,16 @@ type BarService struct {
 }
 ```
 
-### 8. Query the registry
+### 8. Must Resolve
+
+The `MustResolve` and `MustResolveMany` functions are variants of the API that can omit error handling. They basically do the same as `Resolve` and `ResolveMany`, but they do not have `error` as a return value, and they will cause `panic` if the dependency cannot be resolved.
+```go
+// If the resolution is successful, an instance is obtained.
+// If it cannot be resolved, it will cause panic.
+var instance IFooService = MustResolve[IFooService]()
+```
+
+### 9. Query the registry
 
 To check if a dependency on a given interface is registered with a container, use the `IsRegistered` function:
 ```go
