@@ -50,17 +50,15 @@ func injectToFields(ctx resolveContext, instance any) error {
 		t := v.Type()
 		for i := 0; i < v.NumField(); i++ {
 			field := v.Field(i)
+			fieldType := field.Type()
 			info := parseTag(t.Field(i).Tag)
 			if info.inject {
 				if !field.CanSet() {
 					// accessing unexported fields
 					// cf. https://stackoverflow.com/a/43918797
-					field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+					field = reflect.NewAt(fieldType, unsafe.Pointer(field.UnsafeAddr())).Elem()
 				}
-				if !field.CanSet() || !field.IsValid() {
-					return fmt.Errorf("something went wrong with the field injection")
-				}
-				instance, err := callActivator(ctx, field.Type(), info.key)
+				instance, err := callActivator(ctx, fieldType, info.key)
 				if err != nil {
 					return err
 				}
