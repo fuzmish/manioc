@@ -105,7 +105,8 @@ func Test_Fail(t *testing.T) {
 		assert := assert.New(t)
 		assert.Panics(func() {
 			ctr := manioc.NewContainer()
-			manioc.Register[IFooService, FooService](manioc.WithContainer(ctr), manioc.WithCachePolicy(42))
+			err := manioc.Register[IFooService, FooService](manioc.WithContainer(ctr), manioc.WithCachePolicy(42))
+			assert.Nil(err)
 		})
 	})
 
@@ -154,8 +155,10 @@ func Test_Fail2(t *testing.T) {
 
 	ctr := manioc.NewContainer()
 
-	manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
-	manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr))
+	err := manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
+	assert.Nil(err)
+	err = manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr))
+	assert.Nil(err)
 
 	ret, err := manioc.Resolve[IBarService](manioc.WithScope(ctr))
 	assert.Nil(ret)
@@ -166,14 +169,16 @@ func Test_InvalidRegistration(t *testing.T) {
 	t.Run("invalid implementation type", func(t *testing.T) {
 		assert.Panics(t, func() {
 			ctr := manioc.NewContainer()
-			manioc.Register[IFooService, *struct{}](manioc.WithContainer(ctr))
+			err := manioc.Register[IFooService, *struct{}](manioc.WithContainer(ctr))
+			assert.Error(t, err)
 		})
 	})
 
 	t.Run("invalid constructor type", func(t *testing.T) {
 		assert.Panics(t, func() {
 			ctr := manioc.NewContainer()
-			manioc.RegisterConstructor[IFooService](func() *struct{} { return nil }, manioc.WithContainer(ctr))
+			err := manioc.RegisterConstructor[IFooService](func() *struct{} { return nil }, manioc.WithContainer(ctr))
+			assert.Error(t, err)
 		})
 	})
 }
@@ -199,7 +204,8 @@ func Test_Container(t *testing.T) {
 func Test_Transient(t *testing.T) {
 	t.Run("default cache policy is NeverCache", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.Register[IFooService, FooService](manioc.WithContainer(ctr))
+		err := manioc.Register[IFooService, FooService](manioc.WithContainer(ctr))
+		assert.Nil(t, err)
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		assert.NotSame(t, r1, r2)
@@ -208,7 +214,8 @@ func Test_Transient(t *testing.T) {
 	// same test but using explicit helper API
 	t.Run("traisient", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.RegisterTransient[IFooService, FooService](manioc.WithContainer(ctr))
+		err := manioc.RegisterTransient[IFooService, FooService](manioc.WithContainer(ctr))
+		assert.Nil(t, err)
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		assert.NotSame(t, r1, r2)
@@ -217,7 +224,8 @@ func Test_Transient(t *testing.T) {
 	// for constructor
 	t.Run("traisient constructor", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.RegisterTransientConstructor[IFooService](NewFooService, manioc.WithContainer(ctr))
+		err := manioc.RegisterTransientConstructor[IFooService](NewFooService, manioc.WithContainer(ctr))
+		assert.Nil(t, err)
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		assert.NotSame(t, r1, r2)
@@ -227,10 +235,11 @@ func Test_Transient(t *testing.T) {
 func Test_Scope(t *testing.T) {
 	t.Run("using ScopedCache policy", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.Register[IFooService, FooService](
+		err := manioc.Register[IFooService, FooService](
 			manioc.WithCachePolicy(manioc.ScopedCache),
 			manioc.WithContainer(ctr),
 		)
+		assert.Nil(t, err)
 		scope, cleanup := manioc.OpenScope(manioc.WithParentScope(ctr))
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(scope))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(scope))
@@ -238,16 +247,15 @@ func Test_Scope(t *testing.T) {
 		cleanup()
 
 		// after cleanup
-		_, err := manioc.Resolve[IFooService](manioc.WithScope(scope))
+		_, err = manioc.Resolve[IFooService](manioc.WithScope(scope))
 		assert.Error(t, err)
 	})
 
 	// same test but using helper API
 	t.Run("using ScopedCache policy", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.RegisterScoped[IFooService, FooService](
-			manioc.WithContainer(ctr),
-		)
+		err := manioc.RegisterScoped[IFooService, FooService](manioc.WithContainer(ctr))
+		assert.Nil(t, err)
 		scope, cleanup := manioc.OpenScope(manioc.WithParentScope(ctr))
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(scope))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(scope))
@@ -255,14 +263,15 @@ func Test_Scope(t *testing.T) {
 		cleanup()
 
 		// after cleanup
-		_, err := manioc.Resolve[IFooService](manioc.WithScope(scope))
+		_, err = manioc.Resolve[IFooService](manioc.WithScope(scope))
 		assert.Error(t, err)
 	})
 
 	// for constructor
 	t.Run("scoped constructor", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.RegisterScopedConstructor[IFooService](NewFooService, manioc.WithContainer(ctr))
+		err := manioc.RegisterScopedConstructor[IFooService](NewFooService, manioc.WithContainer(ctr))
+		assert.Nil(t, err)
 		scope, cleanup := manioc.OpenScope(manioc.WithParentScope(ctr))
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(scope))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(scope))
@@ -270,7 +279,7 @@ func Test_Scope(t *testing.T) {
 		cleanup()
 
 		// after cleanup
-		_, err := manioc.Resolve[IFooService](manioc.WithScope(scope))
+		_, err = manioc.Resolve[IFooService](manioc.WithScope(scope))
 		assert.Error(t, err)
 	})
 }
@@ -278,10 +287,11 @@ func Test_Scope(t *testing.T) {
 func Test_Singleton(t *testing.T) {
 	t.Run("using GlobalCache policy", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.Register[IFooService, FooService](
+		err := manioc.Register[IFooService, FooService](
 			manioc.WithContainer(ctr),
 			manioc.WithCachePolicy(manioc.GlobalCache),
 		)
+		assert.Nil(t, err)
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		assert.Same(t, r1, r2)
@@ -289,7 +299,8 @@ func Test_Singleton(t *testing.T) {
 
 	t.Run("using GlobalCache policy", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.RegisterSingleton[IFooService, FooService](manioc.WithContainer(ctr))
+		err := manioc.RegisterSingleton[IFooService, FooService](manioc.WithContainer(ctr))
+		assert.Nil(t, err)
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		assert.Same(t, r1, r2)
@@ -297,7 +308,8 @@ func Test_Singleton(t *testing.T) {
 
 	t.Run("using GlobalCache policy", func(t *testing.T) {
 		ctr := manioc.NewContainer()
-		manioc.RegisterSingletonConstructor[IFooService](NewFooService, manioc.WithContainer(ctr))
+		err := manioc.RegisterSingletonConstructor[IFooService](NewFooService, manioc.WithContainer(ctr))
+		assert.Nil(t, err)
 		r1, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		r2, _ := manioc.Resolve[IFooService](manioc.WithScope(ctr))
 		assert.Same(t, r1, r2)
@@ -307,8 +319,10 @@ func Test_Singleton(t *testing.T) {
 func Test_RegisterConstructor(t *testing.T) {
 	ctr := manioc.NewContainer()
 
-	manioc.Register[IFooService, FooService](manioc.WithContainer(ctr))
-	manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr))
+	err := manioc.Register[IFooService, FooService](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr))
+	assert.Nil(t, err)
 
 	// resolve
 	ret, err := manioc.Resolve[IBarService](manioc.WithScope(ctr))
@@ -321,10 +335,14 @@ func Test_RegisterConstructor(t *testing.T) {
 func Test_FieldInjection(t *testing.T) {
 	ctr := manioc.NewContainer()
 
-	manioc.RegisterInstance[IFooService](&FooService{}, manioc.WithContainer(ctr))
-	manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr))
-	manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr), manioc.WithRegisterKey("hello"))
-	manioc.Register[IBazService, BazService](manioc.WithContainer(ctr))
+	err := manioc.RegisterInstance[IFooService](&FooService{}, manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr), manioc.WithRegisterKey("hello"))
+	assert.Nil(t, err)
+	err = manioc.Register[IBazService, BazService](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
 
 	// resolve
 	ret, err := manioc.Resolve[IBazService](manioc.WithScope(ctr))
@@ -337,9 +355,12 @@ func Test_FieldInjection(t *testing.T) {
 func Test_ResolveMany(t *testing.T) {
 	ctr := manioc.NewContainer()
 
-	manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
-	manioc.Register[IBarService, BarService](manioc.WithContainer(ctr), manioc.WithRegisterKey("bar"))
-	manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr), manioc.WithRegisterKey("bar"))
+	err := manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.Register[IBarService, BarService](manioc.WithContainer(ctr), manioc.WithRegisterKey("bar"))
+	assert.Nil(t, err)
+	err = manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr), manioc.WithRegisterKey("bar"))
+	assert.Nil(t, err)
 
 	ret, err := manioc.ResolveMany[IBarService](manioc.WithScope(ctr))
 	if err != nil {
@@ -367,9 +388,12 @@ func Test_ResolveMany(t *testing.T) {
 func Test_ResolveManyViaFieldInjection(t *testing.T) {
 	ctr := manioc.NewContainer()
 
-	manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
-	manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr))
-	manioc.Register[IFooBarService, FooBarService](manioc.WithContainer(ctr))
+	err := manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.Register[IFooBarService, FooBarService](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
 
 	ret, err := manioc.Resolve[IFooBarService](manioc.WithScope(ctr))
 	if err != nil {
@@ -383,9 +407,12 @@ func Test_ResolveManyViaFieldInjection(t *testing.T) {
 func Test_ResolveManyViaConstructorInjection(t *testing.T) {
 	ctr := manioc.NewContainer()
 
-	manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
-	manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr))
-	manioc.RegisterConstructor[IFooBazService](NewFooBazService, manioc.WithContainer(ctr))
+	err := manioc.Register[IBarService, BarService](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.Register[IBarService, BarService2](manioc.WithContainer(ctr))
+	assert.Nil(t, err)
+	err = manioc.RegisterConstructor[IFooBazService](NewFooBazService, manioc.WithContainer(ctr))
+	assert.Nil(t, err)
 
 	ret, err := manioc.Resolve[IFooBazService](manioc.WithScope(ctr))
 	if err != nil {
