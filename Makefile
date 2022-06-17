@@ -2,5 +2,6 @@
 
 coverage:
 	if [ ! -d coverage ]; then mkdir coverage; fi
-	go test -v -coverpkg=./... -coverprofile=coverage/cover.out ./...
-	go tool cover -html=coverage/cover.out -o coverage/cover.html
+	rm -f coverage/coverage.*
+	go test -v -race -coverpkg=./... -coverprofile=coverage/coverage.out ./...
+	go tool cover -html=coverage/coverage.out -o coverage/coverage.html
