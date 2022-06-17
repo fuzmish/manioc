@@ -1,5 +1,9 @@
 # manioc
 
+[![Go](https://github.com/fuzmish/manioc/actions/workflows/go.yml/badge.svg)](https://github.com/fuzmish/manioc/actions/workflows/go.yml)
+[![codecov](https://codecov.io/gh/fuzmish/manioc/branch/main/graph/badge.svg?token=9XHET8PROL)](https://codecov.io/gh/fuzmish/manioc)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/fuzmish/manioc?color=%2398d8ea&label=&logo=go)](https://github.com/fuzmish/manioc/blob/main/go.mod)
+
 <h2 align="center">
 <img src="./docs/manioc.svg" width="200" />
 
