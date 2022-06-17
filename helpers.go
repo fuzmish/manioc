@@ -28,6 +28,18 @@ func RegisterTransientConstructor[TInterface any, TConstructor any](ctor TConstr
 	return RegisterConstructor[TInterface](ctor, append(opts, WithCachePolicy(NeverCache))...)
 }
 
+func MustResolve[TInterface any](opts ...ResolveOption) TInterface {
+	ret, err := Resolve[TInterface](opts...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func ResolveMany[TInterface any](opts ...ResolveOption) ([]TInterface, error) {
 	return Resolve[[]TInterface](opts...)
+}
+
+func MustResolveMany[TInterface any](opts ...ResolveOption) []TInterface {
+	return MustResolve[[]TInterface](opts...)
 }
