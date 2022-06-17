@@ -496,3 +496,33 @@ func Test_IsRegistered(t *testing.T) {
 	_, err = manioc.Resolve[IFooService](manioc.WithScope(ctr), manioc.WithResolveKey("foo"))
 	assert.Error(err)
 }
+
+func Test_unexported_must_resolve(t *testing.T) {
+	t.Run("unable to resolve", func(t *testing.T) {
+		assert.Panics(t, func() {
+			ctr := manioc.NewContainer()
+			_ = manioc.MustResolve[IFooService](manioc.WithScope(ctr))
+		})
+	})
+
+	t.Run("unable to resolve many", func(t *testing.T) {
+		assert.Panics(t, func() {
+			ctr := manioc.NewContainer()
+			_ = manioc.MustResolveMany[IFooService](manioc.WithScope(ctr))
+		})
+	})
+
+	t.Run("must resolve", func(t *testing.T) {
+		ctr := manioc.NewContainer()
+		err := manioc.Register[IFooService, FooService](manioc.WithContainer(ctr))
+		assert.Nil(t, err)
+		assert.NotNil(t, manioc.MustResolve[IFooService](manioc.WithScope(ctr)))
+	})
+
+	t.Run("must resolve many", func(t *testing.T) {
+		ctr := manioc.NewContainer()
+		err := manioc.Register[IFooService, FooService](manioc.WithContainer(ctr))
+		assert.Nil(t, err)
+		assert.Len(t, manioc.MustResolveMany[IFooService](manioc.WithScope(ctr)), 1)
+	})
+}
