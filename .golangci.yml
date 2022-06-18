@@ -1,15 +1,10 @@
 linters:
-  disable-all: true
-  enable:
-    - deadcode
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - structcheck
-    - typecheck
-    - unused
-    - varcheck
-    # added
-    - gofmt
+  enable-all: true
+  disable:
+    - godot
+    - goerr113
+    - ireturn
+    - nlreturn
+    - paralleltest
+    - testpackage
+    - wsl
