@@ -69,7 +69,7 @@ To register a constructor to be called during resolution, use the `RegisterConst
 manioc.RegisterConstructor[IMyService](NewMyService)
 ```
 
-To register an existing `MyService` instance as a singleton instance of `IMyService`, use the `RegisterInstance` function:
+To register an existing `MyService` instance as a singleton of `IMyService`, use the `RegisterInstance` function:
 ```go
 var myService MyService = //...
 manioc.RegisterInstance[IMyService](&myService)
@@ -77,7 +77,7 @@ manioc.RegisterInstance[IMyService](&myService)
 
 ### 2. Container
 
-In the above examples, we have used an implicitly prepared global container for registering and resolving dependencies. However, there may be cases where it is inappropriate to use a global container. The `NewContainer` function can be used to create a new container:
+In the above examples, we have used the global container implicitly for registering and resolving dependencies. If you do not want to use a global container, you can use the `NewContainer` function to create a new container.
 ```go
 ctr := manioc.NewContainer()
 ```
@@ -294,18 +294,12 @@ The `Unregister` function returns `true` if one or more registrations were delet
 
 ## Tips
 
-### Known Issues / Limitations
+### Known Issues
 
-- The following features are being investigated for implementation:
-  - Instance disposal (something like `IDisposable` in C#)
-  - More flexible and configurable dependency resolution rules (e.g., handling of duplicate keys, handling of keys at ResolveMany, etc.)
-  - Instance cache inheritance at scope creation (currently always inherits nothing)
-  - We are also considering other nice features that other DI containers have, but due to technical and development resource limitations, there are currently no features that we are considering as a high priority. We are open to your suggestions at any time.
-- Currently, the test is very crude. We would like to write clean and comprehensive tests. We also plan to set up CI with GitHub Actions.
-- At this moment (v1.18), a type parameter cannot be used as a constraint on another type parameter[[1]](#x-fn1-generics-limitations). For this reason, some APIs cannot perform static type checking and are implemented with runtime reflection. For example:
-  - The `Register[TInterface any, TImplementation any](...)` function will compile successfully for any type parameter. We want to constrain the `TImplementation` type by `TInterface` (i.e., we want to do something like `Register[TInterface any, TImplementation TInterface](...)`). It is unclear if this will be possible in future versions of Golang.
-  - `RegisterConstructor[TInterface any, TConstructor any](ctor TConstructor, ...)` function will compile successfully for any type parameter. We want to constrain the `TConstructor` type to be any function with a return value of type `TInterface`. It is unclear if this will be possible in future versions of Golang.
-  - In summary, the following APIs do not perform static type checking for the reasons discussed above:
+- As of Golang 1.18, a type parameter cannot be used as a constraint on another type parameter. For this reason, some APIs cannot perform static type checking and are implemented with runtime reflection. For example:
+  - The `Register[TInterface any, TImplementation any](...)` function will compile successfully for any type parameter. We want to constrain the `TImplementation` type by `TInterface` (i.e., we want to do something like `Register[TInterface any, TImplementation TInterface](...)`, but an error `cannot use a type parameter as constraint` is reported at compile time, cf. https://stackoverflow.com/a/71568095).
+  - `RegisterConstructor[TInterface any, TConstructor any](ctor TConstructor, ...)` function will compile successfully for any type parameter. We want to constrain the `TConstructor` type to be any function with a return value of type `TInterface` (i.e. we want to do something like `RegisterConstructor[TInterface any, ...TArgs](ctor Func[TArgs..., TInterface])`, but `Func` does not exist and variadic type parameter is not supported).
+  - In summary, the following APIs cannot perform type checking statically, but will do it at runtime by reflection:
     - `RegisterConstructor` (`RegisterSingletonConstructor`, `RegisterScopedConstructor`, `RegisterTransientConstructor`)
     - `Register` (`RegisterSingleton`, `RegisterScoped`, `RegisterTransient`)
   - In contrast, the following APIs are type-checked statically:
@@ -313,15 +307,9 @@ The `Unregister` function returns `true` if one or more registrations were delet
   - Also, the following APIs do not need to use type parameter constraints, so the above problem does not occur:
     - `IsRegistered`
     - `Unregister`
-    - `Resolve` (`ResolveMany`)
-- At this moment (v1.18), Golang does not allow type parameters to be set for individual methods of struct. It is because of this limitation that the API is in the form `Resolve[T](WithScope(scope))` instead of the form `scope.Resolve[T]()`. It is unclear if this can be improved in future Golang releases.
-- At this moment (v1.18), Golang does not have optional arguments, so we employ the Functional Options Pattern. It is unclear if this can be improved in future Golang releases.
-
-<small>
-
-<span id="x-fn1-generics-limitations">[1]: cf. https://stackoverflow.com/a/71568095</span>
-
-</small>
+    - `Resolve` (`ResolveMany`, `MustResolve`, `MustResolveMany`)
+  - It is unclear if this will be possible in future versions of Golang.
+- As of Golang 1.18, a struct cannot have methods with type parameters. It is why our APIs are in the form `Resolve[T](WithScope(scope))` instead of the form `scope.Resolve[T]()`. It is unclear if this can be improved in future Golang releases (cf. [golang/go#49085](https://github.com/golang/go/issues/49085)).
 
 ### Name and Logo
 
