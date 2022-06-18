@@ -528,3 +528,27 @@ func Test_unexported_must_resolve(t *testing.T) {
 		assert.Len(t, manioc.MustResolveMany[IFooService](manioc.WithScope(ctr)), 1)
 	})
 }
+
+func Test_field_injection_for_registered_instance(t *testing.T) {
+	assert := assert.New(t)
+
+	ctr := manioc.NewContainer()
+	_ = manioc.RegisterInstance[IBarBazService](&BarBazService{}, manioc.WithContainer(ctr)) //nolint
+
+	// raise error if IFooService is not registered
+	_, err := manioc.Resolve[IBarBazService](manioc.WithScope(ctr))
+	assert.Error(err)
+
+	// register IFooService
+	_ = manioc.Register[IFooService, FooService](manioc.WithContainer(ctr))
+	ret := manioc.MustResolve[IBarBazService](manioc.WithScope(ctr))
+	assert.NotNil(ret)
+
+	s, ok := ret.(*BarBazService)
+	assert.True(ok)
+	assert.NotNil(s.foo)
+
+	f, ok := s.foo.(*FooService)
+	assert.True(ok)
+	assert.NotNil(f)
+}

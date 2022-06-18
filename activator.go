@@ -120,6 +120,20 @@ func createConstructorActivator[TInterface any, TConstructor any](ctor TConstruc
 	}
 }
 
+func createSingletonInstanceActivator(instance any) activator {
+	var cache any
+	return func(ctx resolveContext) (any, error) {
+		if cache == nil {
+			// resolve instance fields
+			if err := injectToFields(ctx, instance); err != nil {
+				return nil, err
+			}
+			cache = instance
+		}
+		return cache, nil
+	}
+}
+
 func createCachedActivator(baseActivator activator, policy CachePolicy) activator {
 	if policy == NeverCache {
 		return baseActivator
