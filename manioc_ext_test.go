@@ -100,6 +100,30 @@ func (s *BarBazService) DoBarBaz() {
 	s.foo.DoFoo()
 }
 
+type BarBazService2 struct {
+	foo IFooService `manioc:"iject"` // typo
+}
+
+func (s *BarBazService2) DoBarBaz() {
+	s.foo.DoFoo()
+}
+
+type BarBazService3 struct {
+	foo IFooService `manioc:"ky=foo"` // typo
+}
+
+func (s *BarBazService3) DoBarBaz() {
+	s.foo.DoFoo()
+}
+
+type BarBazService4 struct {
+	foo IFooService `manioc:"inject,unknowntag"`
+}
+
+func (s *BarBazService4) DoBarBaz() {
+	s.foo.DoFoo()
+}
+
 func Test_Fail(t *testing.T) {
 	t.Run("Invalid CachePolicy", func(t *testing.T) {
 		assert := assert.New(t)
@@ -551,4 +575,20 @@ func Test_field_injection_for_registered_instance(t *testing.T) {
 	f, ok := s.foo.(*FooService)
 	assert.True(ok)
 	assert.NotNil(f)
+}
+
+func Test_invalid_struct_tags(t *testing.T) {
+	assert := assert.New(t)
+
+	ctr := manioc.NewContainer()
+	assert.Nil(manioc.Register[IBarBazService, BarBazService2](manioc.WithContainer(ctr), manioc.WithRegisterKey("2")))
+	assert.Nil(manioc.Register[IBarBazService, BarBazService3](manioc.WithContainer(ctr), manioc.WithRegisterKey("3")))
+	assert.Nil(manioc.Register[IBarBazService, BarBazService4](manioc.WithContainer(ctr), manioc.WithRegisterKey("4")))
+
+	_, err := manioc.Resolve[IBarBazService](manioc.WithScope(ctr), manioc.WithResolveKey("2"))
+	assert.Error(err)
+	_, err = manioc.Resolve[IBarBazService](manioc.WithScope(ctr), manioc.WithResolveKey("3"))
+	assert.Error(err)
+	_, err = manioc.Resolve[IBarBazService](manioc.WithScope(ctr), manioc.WithResolveKey("4"))
+	assert.Error(err)
 }
