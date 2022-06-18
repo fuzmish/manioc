@@ -53,7 +53,10 @@ func injectToFields(ctx resolveContext, instance any) error {
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
 		fieldType := field.Type()
-		info := parseTag(t.Field(i).Tag)
+		info, err := parseTag(t.Field(i).Tag)
+		if err != nil {
+			return err
+		}
 		if !info.inject {
 			continue
 		}
