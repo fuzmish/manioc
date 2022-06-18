@@ -1,11 +1,10 @@
 {
     "go.lintOnSave": "workspace",
     "go.lintTool": "golangci-lint",
-    "go.lintFlags": [
-        "--fast"
-    ],
+    "go.lintFlags": [],
     "[go]": {
         "editor.formatOnSave": true,
-        "editor.formatOnPaste": true
+        "editor.formatOnPaste": true,
+        "editor.foldingStrategy": "indentation"
     }
 }

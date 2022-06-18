@@ -42,29 +42,31 @@ func callActivator(ctx resolveContext, targetType reflect.Type, key any) (any, e
 }
 
 func injectToFields(ctx resolveContext, instance any) error {
-	v := reflect.ValueOf(instance)
-	if v.Kind() == reflect.Pointer {
-		v = v.Elem()
+	val := reflect.ValueOf(instance)
+	if val.Kind() == reflect.Pointer {
+		val = val.Elem()
 	}
-	if v.Kind() == reflect.Struct {
-		t := v.Type()
-		for i := 0; i < v.NumField(); i++ {
-			field := v.Field(i)
-			fieldType := field.Type()
-			info := parseTag(t.Field(i).Tag)
-			if info.inject {
-				if !field.CanSet() {
-					// accessing unexported fields
-					// cf. https://stackoverflow.com/a/43918797
-					field = reflect.NewAt(fieldType, unsafe.Pointer(field.UnsafeAddr())).Elem()
-				}
-				instance, err := callActivator(ctx, fieldType, info.key)
-				if err != nil {
-					return err
-				}
-				field.Set(reflect.ValueOf(instance))
-			}
+	if val.Kind() != reflect.Struct {
+		return fmt.Errorf("field injection is not allowed for non-struct value")
+	}
+	t := val.Type()
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldType := field.Type()
+		info := parseTag(t.Field(i).Tag)
+		if !info.inject {
+			continue
 		}
+		if !field.CanSet() {
+			// accessing unexported fields
+			// cf. https://stackoverflow.com/a/43918797
+			field = reflect.NewAt(fieldType, unsafe.Pointer(field.UnsafeAddr())).Elem()
+		}
+		instance, err := callActivator(ctx, fieldType, info.key)
+		if err != nil {
+			return err
+		}
+		field.Set(reflect.ValueOf(instance))
 	}
 	return nil
 }
@@ -90,7 +92,7 @@ func createConstructorActivator[TInterface any, TConstructor any](ctor TConstruc
 		panic(err)
 	}
 	// cache constructor reflect info
-	tFn := typeOf[TConstructor]()
+	tFn := typeof[TConstructor]()
 	vFn := reflect.ValueOf(ctor)
 	numArgs := tFn.NumIn()
 	tFnArgs := make([]reflect.Type, numArgs)
@@ -132,11 +134,11 @@ func createCachedActivator(baseActivator activator, policy CachePolicy) activato
 				}
 				ctx.setCache(&act, ret)
 			}
-			//ret, ok := ctx.getCache(&act)
+			// ret, ok := ctx.getCache(&act)
 			ret, _ := ctx.getCache(&act)
-			//if !ok {
-			//	return nil, fmt.Errorf("corrupted cache")
-			//}
+			// if !ok {
+			// 	return nil, fmt.Errorf("corrupted cache")
+			// }
 			return ret, nil
 		}
 		return act
