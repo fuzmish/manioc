@@ -41,7 +41,7 @@ type BazService2 struct {
 
 func (*BazService2) DoBaz() {}
 
-func Test_ensureInterface(t *testing.T) {
+func Test_ensureInterface_primitives(t *testing.T) {
 	assert := assert.New(t)
 
 	//
@@ -93,20 +93,11 @@ func Test_ensureInterface(t *testing.T) {
 	// pointer
 	assert.Error(ensureInterface[uintptr]())
 	assert.Error(ensureInterface[*uintptr]())
+}
 
-	//
-	// interfaces
-	//
-	assert.NoError(ensureInterface[any]())
-	assert.NoError(ensureInterface[any]())
-	assert.Error(ensureInterface[*any]())
-	assert.NoError(ensureInterface[interface{ do() }]())
-	assert.Error(ensureInterface[*interface{ do() }]())
-	assert.NoError(ensureInterface[error]())
+func Test_ensureInterface_complex_types(t *testing.T) {
+	assert := assert.New(t)
 
-	//
-	// complex types
-	//
 	// struct
 	assert.Error(ensureInterface[struct{}]())
 	assert.Error(ensureInterface[*struct{}]())
@@ -147,6 +138,18 @@ func Test_ensureInterface(t *testing.T) {
 	assert.Error(ensureInterface[*chan struct{}]())
 	assert.Error(ensureInterface[chan any]())
 	assert.Error(ensureInterface[*chan any]())
+}
+
+func Test_ensureInterface_interfaces(t *testing.T) {
+	assert := assert.New(t)
+
+	// interfaces
+	assert.NoError(ensureInterface[any]())
+	assert.NoError(ensureInterface[any]())
+	assert.Error(ensureInterface[*any]())
+	assert.NoError(ensureInterface[interface{ do() }]())
+	assert.Error(ensureInterface[*interface{ do() }]())
+	assert.NoError(ensureInterface[error]())
 
 	// custom
 	assert.NoError(ensureInterface[IFooService]())

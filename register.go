@@ -15,14 +15,15 @@ func mergeRegisterOptions(opts []RegisterOption) *registerOptions {
 func IsRegistered[TInterface any](opts ...RegisterOption) bool {
 	options := mergeRegisterOptions(opts)
 	ctx := options.container.getRegisterContext()
-	ret := ctx.getActivators(typeOf[TInterface](), options.key)
+	ret := ctx.getActivators(typeof[TInterface](), options.key)
 	return len(ret) > 0
 }
 
 func registerActivator[TInterface any](act activator, opts ...RegisterOption) error {
 	options := mergeRegisterOptions(opts)
 	ctx := options.container.getRegisterContext()
-	return ctx.registerActivator(typeOf[TInterface](), options.key, createCachedActivator(act, options.policy))
+	//nolint:wrapcheck
+	return ctx.registerActivator(typeof[TInterface](), options.key, createCachedActivator(act, options.policy))
 }
 
 func RegisterConstructor[TInterface any, TConstructor any](ctor TConstructor, opts ...RegisterOption) error {
@@ -30,7 +31,9 @@ func RegisterConstructor[TInterface any, TConstructor any](ctor TConstructor, op
 }
 
 func RegisterInstance[TInterface any](instance TInterface, opts ...RegisterOption) error {
-	return registerActivator[TInterface](func(ctx resolveContext) (any, error) { return instance, nil }, append(opts, WithCachePolicy(GlobalCache))...)
+	return registerActivator[TInterface](func(ctx resolveContext) (any, error) {
+		return instance, nil
+	}, append(opts, WithCachePolicy(GlobalCache))...)
 }
 
 func Register[TInterface any, TImplementation any](opts ...RegisterOption) error {
@@ -40,5 +43,5 @@ func Register[TInterface any, TImplementation any](opts ...RegisterOption) error
 func Unregister[TInterface any](opts ...RegisterOption) bool {
 	options := mergeRegisterOptions(opts)
 	ctx := options.container.getRegisterContext()
-	return ctx.unregisterActivators(typeOf[TInterface](), options.key)
+	return ctx.unregisterActivators(typeof[TInterface](), options.key)
 }

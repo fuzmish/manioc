@@ -14,4 +14,5 @@ func newDefaultContainer() *defaultContainer {
 	}
 }
 
+//nolint:gochecknoglobals
 var globalContainer Container = newDefaultContainer()

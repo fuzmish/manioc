@@ -5,19 +5,19 @@ import (
 	"reflect"
 )
 
-func typeOf[T any]() reflect.Type {
+func typeof[T any]() reflect.Type {
 	return reflect.TypeOf((*T)(nil)).Elem()
 }
 
-func nameOf[T any]() string {
-	return typeOf[T]().Name()
+func nameof[T any]() string {
+	return typeof[T]().Name()
 }
 
 func ensureInterface[T any]() error {
-	if typeOf[T]().Kind() == reflect.Interface {
+	if typeof[T]().Kind() == reflect.Interface {
 		return nil
 	}
-	return fmt.Errorf("EnsureInterface: %s is not an interface", nameOf[T]())
+	return fmt.Errorf("EnsureInterface: %s is not an interface", nameof[T]())
 }
 
 func ensureImplements[TInterface any, TImplementation any]() error {
@@ -26,35 +26,35 @@ func ensureImplements[TInterface any, TImplementation any]() error {
 	}
 	if err := ensureInterface[TImplementation](); err == nil {
 		return fmt.Errorf("EnsureImplements: an interface type %s is not allowed for TImplementation",
-			nameOf[TImplementation]())
+			nameof[TImplementation]())
 	}
-	if typeOf[*TImplementation]().Implements(typeOf[TInterface]()) {
+	if typeof[*TImplementation]().Implements(typeof[TInterface]()) {
 		return nil
 	}
 	return fmt.Errorf("EnsureImplements: %s does not implement %s",
-		nameOf[TImplementation](),
-		nameOf[TInterface]())
+		nameof[TImplementation](),
+		nameof[TInterface]())
 }
 
 func ensureFunctionReturnType[TFunc any, TReturn any]() error {
-	fn := typeOf[TFunc]()
-	if fn.Kind() != reflect.Func {
+	funcType := typeof[TFunc]()
+	if funcType.Kind() != reflect.Func {
 		return fmt.Errorf("EnsureFunctionReturnType: TFunc %v is not a function type",
-			nameOf[TFunc]())
+			nameof[TFunc]())
 	}
-	if fn.NumOut() != 1 {
+	if funcType.NumOut() != 1 {
 		return fmt.Errorf("EnsureFunctionReturnType: At this moment the function returns multi-value is not supported")
 	}
-	if fn.IsVariadic() {
+	if funcType.IsVariadic() {
 		return fmt.Errorf("EnsureFunctionReturnType: At this moment variadic arg is not supported")
 	}
-	out := fn.Out(0)
-	ret := typeOf[TReturn]()
+	out := funcType.Out(0)
+	ret := typeof[TReturn]()
 	if !out.AssignableTo(ret) {
 		return fmt.Errorf("EnsureFunctionReturnType: The return type %v of TFunc %v is not assignable to %v",
 			out.Name(),
-			nameOf[TFunc](),
-			nameOf[TReturn]())
+			nameof[TFunc](),
+			nameof[TReturn]())
 	}
 	return nil
 }

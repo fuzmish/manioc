@@ -65,7 +65,7 @@ type FooBarService struct {
 }
 
 func NewFooBarService() *FooBarService {
-	return &FooBarService{}
+	return &FooBarService{JsBar: nil}
 }
 
 func (s *FooBarService) DoFooBar() int {
@@ -146,7 +146,6 @@ func Test_Fail(t *testing.T) {
 		ret4, err := manioc.Resolve[IFooBarService](manioc.WithScope(ctr))
 		assert.Nil(ret4)
 		assert.Error(err)
-
 	})
 }
 
@@ -335,11 +334,14 @@ func Test_RegisterConstructor(t *testing.T) {
 func Test_FieldInjection(t *testing.T) {
 	ctr := manioc.NewContainer()
 
-	err := manioc.RegisterInstance[IFooService](&FooService{}, manioc.WithContainer(ctr))
+	err := manioc.RegisterInstance[IFooService](&FooService{Foo: 42}, manioc.WithContainer(ctr))
 	assert.Nil(t, err)
 	err = manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr))
 	assert.Nil(t, err)
-	err = manioc.RegisterConstructor[IBarService](NewBarService, manioc.WithContainer(ctr), manioc.WithRegisterKey("hello"))
+	err = manioc.RegisterConstructor[IBarService](
+		NewBarService,
+		manioc.WithContainer(ctr),
+		manioc.WithRegisterKey("hello"))
 	assert.Nil(t, err)
 	err = manioc.Register[IBazService, BazService](manioc.WithContainer(ctr))
 	assert.Nil(t, err)
