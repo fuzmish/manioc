@@ -1,6 +1,6 @@
 # manioc
 
-[![Go](https://github.com/fuzmish/manioc/actions/workflows/go.yml/badge.svg)](https://github.com/fuzmish/manioc/actions/workflows/go.yml)
+[![Test](https://github.com/fuzmish/manioc/actions/workflows/test.yml/badge.svg)](https://github.com/fuzmish/manioc/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/fuzmish/manioc/branch/main/graph/badge.svg?token=9XHET8PROL)](https://codecov.io/gh/fuzmish/manioc)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/fuzmish/manioc?color=%2398d8ea&label=&logo=go)](https://github.com/fuzmish/manioc/blob/main/go.mod)
 [![Go Reference](https://pkg.go.dev/badge/github.com/fuzmish/manioc.svg)](https://pkg.go.dev/github.com/fuzmish/manioc)
