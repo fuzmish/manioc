@@ -18,16 +18,19 @@ func parseTag(tag reflect.StructTag) (*tagInfo, error) {
 		key:    nil,
 	}
 	str := tag.Get("manioc")
-	if str == "" {
-		return info, nil
-	}
 	for _, part := range strings.Split(str, ",") {
+		if part == "" {
+			continue
+		}
 		if part == "inject" {
 			info.inject = true
 			continue
 		}
-		if len(part) > 4 && strings.HasPrefix(part, "key=") {
-			info.key = part[4:]
+		if strings.HasPrefix(part, "key=") {
+			// if the value part is empty, remain key as nil
+			if len(part) > len("key=") {
+				info.key = part[4:]
+			}
 			continue
 		}
 		// unknown tag
