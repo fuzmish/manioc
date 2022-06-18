@@ -31,9 +31,8 @@ func RegisterConstructor[TInterface any, TConstructor any](ctor TConstructor, op
 }
 
 func RegisterInstance[TInterface any](instance TInterface, opts ...RegisterOption) error {
-	return registerActivator[TInterface](func(ctx resolveContext) (any, error) {
-		return instance, nil
-	}, append(opts, WithCachePolicy(GlobalCache))...)
+	return registerActivator[TInterface](createSingletonInstanceActivator(instance),
+		append(opts, WithCachePolicy(GlobalCache))...)
 }
 
 func Register[TInterface any, TImplementation any](opts ...RegisterOption) error {
