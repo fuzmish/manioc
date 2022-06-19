@@ -23,7 +23,7 @@ jobs:
         version: v1.46.2
 
     - name: Test
-      run: go test -v -race -coverpkg=./... -coverprofile=coverage.out ./...
+      run: go test -v -race -failfast -coverpkg=./... -coverprofile=coverage.out ./...
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2

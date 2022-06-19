@@ -2,6 +2,7 @@ linters:
   enable-all: true
   disable:
     - godot
+    - godox
     - goerr113
     - ireturn
     - nlreturn
