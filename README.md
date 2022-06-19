@@ -141,6 +141,21 @@ func handler() {
 }
 ```
 
+You can configure the behavior of the scope with respect to the instance cache with the `WithCacheMode` option:
+```go
+// for example
+scope, cleanup := manioc.OpenScope(
+  manioc.WithParentScope(ctr),
+  manioc.WithCacheMode(InheritCacheMode),
+)
+```
+The following three modes are available:
+- `DefaultCacheMode`: Instance caches are independent across scopes. Even if the parent scope is closed, the child scope will remain open.
+- `InheritCacheMode`: In this mode, when a child scope is opened, it inherits the instance cache of the parent scope. When the parent scope is closed, the child scopes are also automatically closed.
+- `SyncCacheMode`: In this mode, the parent and child scopes share the instance cache. When the parent scope is closed, the child scopes are also automatically closed.
+
+Note that these modes only affect instance caches for dependencies registered with `ScopedCache` cache policy, not for `NeverCache` and `GlobalCache` policies.
+
 ### 5. Constructor / Field Injection
 
 In this library, dependency injection is performed on constructors or fields.

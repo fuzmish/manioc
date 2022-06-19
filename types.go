@@ -19,6 +19,22 @@ const (
 	NeverCache
 )
 
+// ScopeCacheMode is an enumeration type that configures the behavior of
+// the scope with respect to its instance cache.
+type ScopeCacheMode int
+
+const (
+	// Instance caches are independent across scopes.
+	// Even if the parent scope is closed, the child scope will remain open.
+	DefaultCacheMode ScopeCacheMode = iota
+	// When a child scope is opened, it inherits the instance cache of the parent scope.
+	// When the parent scope is closed, the child scopes are also automatically closed.
+	InheritCacheMode
+	// The parent and child scopes share the instance cache.
+	// When the parent scope is closed, the child scopes are also automatically closed.
+	SyncCacheMode
+)
+
 // Activator is a function that creates a service instance on given context.
 type activator func(ctx resolveContext) (any, error)
 
@@ -41,7 +57,8 @@ type registerContext interface {
 // Scope is an interface that expresses the cache scope of a container.
 type Scope interface {
 	getResolveContext() resolveContext
-	createScope() (Scope, func())
+	createScope(mode ScopeCacheMode) (Scope, func())
+	closeScope()
 }
 
 // Container is an interface for storing dependencies.
