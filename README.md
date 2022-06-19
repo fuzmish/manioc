@@ -105,10 +105,10 @@ The cache policy can be specified at registration using the `WithCachePolicy` op
 manioc.Register[IMyService, MyService](manioc.WithCachePolicy(manioc.ScopedCache))
 ```
 In addition, the following helper functions are provided to make it easy to set policies:
-- `RegisterSingleton`, `RegisterSingletonConstructor`: It is equivalent to setting a `GlobalCache` policy and calling `Register` or `RegisterConstructor` respectively.
-- `RegisterScoped`, `RegisterScopedConstructor`: It is equivalent to setting a `ScopedCache` policy and calling `Register` or `RegisterConstructor` respectively.
 - `RegisterTransient`, `RegisterTransientConstructor`: It is equivalent to setting a `NeverCache` policy and calling `Register` or `RegisterConstructor` respectively.
   - That is, it is equivalent to the default options for `Register` and `RegisterConstructor`.
+- `RegisterScoped`, `RegisterScopedConstructor`: It is equivalent to setting a `ScopedCache` policy and calling `Register` or `RegisterConstructor` respectively.
+- `RegisterSingleton`, `RegisterSingletonConstructor`: It is equivalent to setting a `GlobalCache` policy and calling `Register` or `RegisterConstructor` respectively.
 
 ### 4. Scope
 
@@ -136,7 +136,7 @@ func handler() {
     defer cleanup()
 
     // resolve in this scope
-    ret, err := manioc.Resolve[IMyService](WithScope(scope))
+    ret, err := manioc.Resolve[IMyService](manioc.WithScope(scope))
     // ...
 }
 ```
@@ -268,7 +268,7 @@ The `MustResolve` and `MustResolveMany` functions are variants of the API that c
 ```go
 // If the resolution is successful, an instance is obtained.
 // If it cannot be resolved, it will cause panic.
-var instance IFooService = MustResolve[IFooService]()
+var instance IFooService = manioc.MustResolve[IFooService]()
 ```
 
 ### 9. Query the registry
@@ -318,7 +318,7 @@ The `Unregister` function returns `true` if one or more registrations were delet
 
 ## Contribution
 
-This library is in the pre-alpha stage, so there may be various problems. If you would like to contribute to the project, please let us know your opinions through [GitHub](https://github.com/fuzmish/manioc) issues and pull requests.
+This library is in pre-alpha stage, so there may be various problems. If you would like to contribute to the project, please let us know your opinions through [GitHub](https://github.com/fuzmish/manioc) issues and pull requests.
 
 ## License
 
