@@ -10,7 +10,10 @@ func (c *defaultContainer) getRegisterContext() registerContext {
 
 func newDefaultContainer() *defaultContainer {
 	return &defaultContainer{
-		defaultScope: defaultScope{context: newDefaultContext()},
+		defaultScope: defaultScope{
+			context:     newDefaultContext(),
+			childScopes: make([]Scope, 0),
+		},
 	}
 }
 
