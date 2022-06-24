@@ -42,8 +42,8 @@ type activator func(ctx resolveContext) (any, error)
 // to obtain registration information from the container to resolve dependencies.
 type resolveContext interface {
 	getActivators(targetType reflect.Type, key any) []activator
-	setCache(cacheKey any, value any)
-	getCache(cacheKey any) (any, bool)
+	setCache(cacheKey any, value any, isGlobal bool)
+	getCache(cacheKey any, isGlobal bool) (any, bool)
 }
 
 // registerContext is an interface required to register dependency information

@@ -12,15 +12,17 @@ type registryKey struct {
 
 // The defaultContext struct implements RegisterContext
 type defaultContext struct {
-	registry map[registryKey][]activator
-	cache    map[any]any
+	registry    map[registryKey][]activator
+	globalCache map[any]any
+	scopedCache map[any]any
 }
 
 // The constructor of defaultContext
 func newDefaultContext() *defaultContext {
 	return &defaultContext{
-		registry: make(map[registryKey][]activator),
-		cache:    make(map[any]any),
+		registry:    make(map[registryKey][]activator),
+		globalCache: make(map[any]any),
+		scopedCache: make(map[any]any),
 	}
 }
 
@@ -51,11 +53,23 @@ func (ctx *defaultContext) unregisterActivators(targetType reflect.Type, key any
 	return false
 }
 
-func (ctx *defaultContext) setCache(cacheKey any, value any) {
-	ctx.cache[cacheKey] = value
+func (ctx *defaultContext) setCache(cacheKey any, value any, isGlobal bool) {
+	var cache map[any]any
+	if isGlobal {
+		cache = ctx.globalCache
+	} else {
+		cache = ctx.scopedCache
+	}
+	cache[cacheKey] = value
 }
 
-func (ctx *defaultContext) getCache(cacheKey any) (any, bool) {
-	ret, ok := ctx.cache[cacheKey]
+func (ctx *defaultContext) getCache(cacheKey any, isGlobal bool) (any, bool) {
+	var cache map[any]any
+	if isGlobal {
+		cache = ctx.globalCache
+	} else {
+		cache = ctx.scopedCache
+	}
+	ret, ok := cache[cacheKey]
 	return ret, ok
 }

@@ -124,16 +124,15 @@ func createConstructorActivator[TInterface any, TConstructor any](ctor TConstruc
 }
 
 func createSingletonInstanceActivator(instance any) activator {
-	var cache any
+	injected := false
 	return func(ctx resolveContext) (any, error) {
-		if cache == nil {
-			// resolve instance fields
+		if !injected {
 			if err := injectToFields(ctx, instance); err != nil {
 				return nil, err
 			}
-			cache = instance
+			injected = true
 		}
-		return cache, nil
+		return instance, nil
 	}
 }
 
@@ -141,37 +140,22 @@ func createCachedActivator(baseActivator activator, policy CachePolicy) activato
 	if policy == NeverCache {
 		return baseActivator
 	}
-	if policy == ScopedCache {
+	if policy == ScopedCache || policy == GlobalCache {
+		isGlobal := policy == GlobalCache
 		var act activator
 		act = func(ctx resolveContext) (any, error) {
-			if _, ok := ctx.getCache(&act); !ok {
+			if _, ok := ctx.getCache(&act, isGlobal); !ok {
 				ret, err := baseActivator(ctx)
 				if err != nil {
 					return nil, err
 				}
-				ctx.setCache(&act, ret)
+				ctx.setCache(&act, ret, isGlobal)
+				return ret, nil
 			}
-			// ret, ok := ctx.getCache(&act)
-			ret, _ := ctx.getCache(&act)
-			// if !ok {
-			// 	return nil, fmt.Errorf("corrupted cache")
-			// }
+			ret, _ := ctx.getCache(&act, isGlobal)
 			return ret, nil
 		}
 		return act
-	}
-	if policy == GlobalCache {
-		var instance any
-		return func(ctx resolveContext) (any, error) {
-			if instance == nil {
-				ret, err := baseActivator(ctx)
-				if err != nil {
-					return nil, err
-				}
-				instance = ret
-			}
-			return instance, nil
-		}
 	}
 	panic(fmt.Errorf("invalid CachePolicy value: %v", policy))
 }
