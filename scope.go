@@ -15,21 +15,22 @@ func (c *defaultScope) getResolveContext() resolveContext {
 func (c *defaultScope) createScope(mode ScopeCacheMode) (Scope, func()) {
 	ret := &defaultScope{
 		context: &defaultContext{
-			registry: c.context.registry,
-			cache:    make(map[any]any),
+			registry:    c.context.registry,
+			globalCache: c.context.globalCache,
+			scopedCache: make(map[any]any),
 		},
 		childScopes: make([]Scope, 0),
 	}
 	if mode == InheritCacheMode {
 		// inherit parent cache
-		for k, v := range c.context.cache {
-			ret.context.cache[k] = v
+		for k, v := range c.context.scopedCache {
+			ret.context.scopedCache[k] = v
 		}
 		// register child scope into parent
 		c.childScopes = append(c.childScopes, ret)
 	} else if mode == SyncCacheMode {
 		// syncrhonize cache
-		ret.context.cache = c.context.cache
+		ret.context.scopedCache = c.context.scopedCache
 		// register child scope into parent
 		c.childScopes = append(c.childScopes, ret)
 	}
@@ -41,11 +42,13 @@ func (c *defaultScope) createScope(mode ScopeCacheMode) (Scope, func()) {
 }
 
 func (c *defaultScope) closeScope() {
-	for _, scope := range c.childScopes {
-		scope.closeScope()
+	if c.childScopes != nil {
+		for _, scope := range c.childScopes {
+			scope.closeScope()
+		}
+		c.childScopes = nil
+		c.context = nil
 	}
-	c.childScopes = nil
-	c.context = nil
 }
 
 // Create new child scope.
