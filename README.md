@@ -1,11 +1,14 @@
 # manioc
 
+<h2 align="center">
+
 [![Test](https://github.com/fuzmish/manioc/actions/workflows/test.yml/badge.svg)](https://github.com/fuzmish/manioc/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/fuzmish/manioc/branch/main/graph/badge.svg?token=9XHET8PROL)](https://codecov.io/gh/fuzmish/manioc)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fuzmish/manioc)](https://goreportcard.com/report/github.com/fuzmish/manioc)
+[![License](https://img.shields.io/github/license/fuzmish/manioc?color=%2333ffc0)](https://github.com/fuzmish/manioc/blob/main/LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/fuzmish/manioc?color=%2398d8ea&label=&logo=go)](https://github.com/fuzmish/manioc/blob/main/go.mod)
 [![Go Reference](https://pkg.go.dev/badge/github.com/fuzmish/manioc.svg)](https://pkg.go.dev/github.com/fuzmish/manioc)
 
-<h2 align="center">
 <img src="./docs/manioc.svg" width="200" />
 
 **manioc** 📦 IoC/DI Container for Golang 1.18+
