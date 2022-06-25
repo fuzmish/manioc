@@ -61,6 +61,9 @@ func Test_RegisterInstanceAndResolve(t *testing.T) {
 
 	ctr := manioc.NewContainer()
 
+	// nil instance is not allowed
+	assert.Error(manioc.RegisterInstance[IMyService](nil, manioc.WithContainer(ctr)))
+
 	// register
 	instance := &MyService{}
 	assert.Nil(manioc.RegisterInstance[IMyService](instance, manioc.WithContainer(ctr)))
