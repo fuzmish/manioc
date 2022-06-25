@@ -75,25 +75,21 @@ func injectToFields(ctx resolveContext, instance any) error {
 }
 
 func createImplementationActivator[TInterface any, TImplementation any]() activator {
-	// check type parameters
-	if err := ensureImplements[TInterface, TImplementation](); err != nil {
-		panic(err)
-	}
-	return func(ctx resolveContext) (any, error) {
-		instance := new(TImplementation)
-		// field injection
-		if err := injectToFields(ctx, instance); err != nil {
-			return nil, err
-		}
-		return instance, nil
-	}
+	// check type parameters;
+	// It would be great if this check were performed statically,
+	// but this is not possible in current Golang.
+	// Therefore we will instead perform the inspection here at runtime.
+	ensureImplements[TInterface, TImplementation]()
+	// create activator
+	return func(ctx resolveContext) (any, error) { return new(TImplementation), nil }
 }
 
-func createConstructorActivator[TInterface any, TConstructor any](ctor TConstructor) activator {
-	// check type parameters
-	if err := ensureFunctionReturnType[TConstructor, TInterface](); err != nil {
-		panic(err)
-	}
+func createConstructorInjectionActivator[TInterface any, TConstructor any](ctor TConstructor) activator {
+	// check type parameters;
+	// It would be great if this check were performed statically,
+	// but this is not possible in current Golang.
+	// Therefore we will instead perform the inspection here at runtime.
+	ensureFunctionReturnType[TConstructor, TInterface]()
 	// cache constructor reflect info
 	tFn := typeof[TConstructor]()
 	vFn := reflect.ValueOf(ctor)
@@ -114,8 +110,24 @@ func createConstructorActivator[TInterface any, TConstructor any](ctor TConstruc
 			args[i] = reflect.ValueOf(instance)
 		}
 		ret := vFn.Call(args)
-		// field injection
 		instance := ret[0].Interface()
+		return instance, nil
+	}
+}
+
+func createSingletonInstanceActivator(instance any) activator {
+	// create identity activator
+	return func(ctx resolveContext) (any, error) {
+		return instance, nil
+	}
+}
+
+func createFieldInjectionActivator(baseActivator activator) activator {
+	return func(ctx resolveContext) (any, error) {
+		instance, err := baseActivator(ctx)
+		if err != nil {
+			return nil, err
+		}
 		if err := injectToFields(ctx, instance); err != nil {
 			return nil, err
 		}
@@ -123,21 +135,9 @@ func createConstructorActivator[TInterface any, TConstructor any](ctor TConstruc
 	}
 }
 
-func createSingletonInstanceActivator(instance any) activator {
-	injected := false
-	return func(ctx resolveContext) (any, error) {
-		if !injected {
-			if err := injectToFields(ctx, instance); err != nil {
-				return nil, err
-			}
-			injected = true
-		}
-		return instance, nil
-	}
-}
-
 func createCachedActivator(baseActivator activator, policy CachePolicy) activator {
 	if policy == NeverCache {
+		// for NeverCache policy, instance cache wrapper is not needed
 		return baseActivator
 	}
 	if policy == ScopedCache || policy == GlobalCache {
