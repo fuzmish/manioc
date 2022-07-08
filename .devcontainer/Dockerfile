@@ -1,9 +1,8 @@
-FROM golang:1.18.3-bullseye
+FROM golang:1.19beta1-bullseye
 
 RUN \
   # install golangci-lint
-  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-    sh -s -- -b $(go env GOPATH)/bin v1.46.2 \
+  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest \
   # install godoc
   && go install golang.org/x/tools/cmd/godoc@latest \
   # install dependencies for VSCode golang extension

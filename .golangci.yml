@@ -1,6 +1,25 @@
 linters:
   enable-all: true
   disable:
+    # deprecated
+    - exhaustivestruct
+    - maligned
+    - interfacer
+    - golint
+    - scopelint
+    # suppress warning; xxx is disabled because of go1.18
+    - bodyclose
+    - contextcheck
+    - interfacer
+    - nilerr
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+    - structcheck
+    - tparallel
+    - unparam
+    - wastedassign
+    # disabled manually
     - godot
     - godox
     - goerr113
