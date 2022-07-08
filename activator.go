@@ -1,61 +1,94 @@
 package manioc
 
 import (
-	"fmt"
 	"reflect"
 	"unsafe"
 )
 
-func callActivator(ctx resolveContext, targetType reflect.Type, key any) (any, error) {
-	// if targetType is slice, use all activators
-	if targetType.Kind() == reflect.Slice {
-		activators := ctx.getActivators(targetType.Elem(), key)
-		num := len(activators)
-		if num == 0 {
-			return nil, fmt.Errorf("no activator found")
-		}
-		slice := reflect.MakeSlice(targetType, num, num)
-		for i, act := range activators {
-			instance, err := act(ctx)
-			if err != nil {
-				return nil, err
-			}
-			slice.Index(i).Set(reflect.ValueOf(instance))
-		}
-		return slice.Interface(), nil
-	}
-	// otherwise, use the first activator
-	activators := ctx.getActivators(targetType, key)
-	if len(activators) == 0 {
-		return nil, fmt.Errorf("no activator found")
-	}
-	if len(activators) > 1 {
-		return nil, fmt.Errorf("there are multiple activators and we cannot choose which one to use")
-	}
-	// instantiate
-	activator := activators[0]
-	instance, err := activator(ctx)
-	if err != nil {
-		return nil, err
+type implementationActivator struct {
+	implementationType reflect.Type
+}
+
+func (e *implementationActivator) activate(ctx resolveContext) (any, error) {
+	var instance any
+	if e.implementationType.Kind() == reflect.Pointer {
+		instance = reflect.New(e.implementationType.Elem()).Interface()
+	} else {
+		instance = reflect.New(e.implementationType).Elem().Interface()
 	}
 	return instance, nil
 }
 
-func injectToFields(ctx resolveContext, instance any) error {
+type instanceActivator struct {
+	instance any
+}
+
+func (e *instanceActivator) activate(ctx resolveContext) (any, error) {
+	return e.instance, nil
+}
+
+type constructorActivator struct {
+	constructor any
+}
+
+func (e *constructorActivator) activate(ctx resolveContext) (any, error) {
+	tFn := reflect.TypeOf(e.constructor)
+	vFn := reflect.ValueOf(e.constructor)
+	numArgs := tFn.NumIn()
+	tFnArgs := make([]reflect.Type, numArgs)
+	for i := 0; i < numArgs; i++ {
+		tFnArgs[i] = tFn.In(i)
+	}
+	// constructor injection
+	args := make([]reflect.Value, numArgs)
+	for idx := 0; idx < numArgs; idx++ {
+		instance, err := ctx.resolve(registryKey{
+			serviceType: tFnArgs[idx],
+			serviceKey:  nil, /* no key is available for constructor injection */
+		})
+		if err != nil {
+			return nil, err
+		}
+		args[idx] = reflect.ValueOf(instance)
+	}
+	ret := vFn.Call(args)
+	// check error value
+	if len(ret) == 2 && ret[1].IsValid() && !ret[1].IsNil() {
+		//nolint:forcetypeassert
+		err := ret[1].Interface().(error)
+		if err != nil {
+			return nil, err
+		}
+	}
+	instance := ret[0].Interface()
+	return instance, nil
+}
+
+type fieldInjectionActivator struct {
+	baseActivator activator
+}
+
+func (e *fieldInjectionActivator) activate(ctx resolveContext) (any, error) {
+	instance, err := e.baseActivator.activate(ctx)
+	if err != nil {
+		return nil, err
+	}
 	val := reflect.ValueOf(instance)
 	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
+	// skip if instance is not a struct
 	if val.Kind() != reflect.Struct {
-		return fmt.Errorf("field injection is not allowed for non-struct value")
+		return instance, nil
 	}
+	// field injection
 	t := val.Type()
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
 		fieldType := field.Type()
 		info, err := parseTag(t.Field(i).Tag)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !info.inject {
 			continue
@@ -65,97 +98,34 @@ func injectToFields(ctx resolveContext, instance any) error {
 			// cf. https://stackoverflow.com/a/43918797
 			field = reflect.NewAt(fieldType, unsafe.Pointer(field.UnsafeAddr())).Elem()
 		}
-		instance, err := callActivator(ctx, fieldType, info.key)
+		instance, err := ctx.resolve(registryKey{
+			serviceType: fieldType,
+			serviceKey:  info.key,
+		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		field.Set(reflect.ValueOf(instance))
 	}
-	return nil
+	return instance, nil
 }
 
-func createImplementationActivator[TInterface any, TImplementation any]() activator {
-	// check type parameters;
-	// It would be great if this check were performed statically,
-	// but this is not possible in current Golang.
-	// Therefore we will instead perform the inspection here at runtime.
-	ensureImplements[TInterface, TImplementation]()
-	// create activator
-	return func(ctx resolveContext) (any, error) { return new(TImplementation), nil }
+type cacheActivator struct {
+	baseActivator activator
+	policy        CachePolicy
 }
 
-func createConstructorInjectionActivator[TInterface any, TConstructor any](ctor TConstructor) activator {
-	// check type parameters;
-	// It would be great if this check were performed statically,
-	// but this is not possible in current Golang.
-	// Therefore we will instead perform the inspection here at runtime.
-	ensureFunctionReturnType[TConstructor, TInterface]()
-	// cache constructor reflect info
-	tFn := typeof[TConstructor]()
-	vFn := reflect.ValueOf(ctor)
-	numArgs := tFn.NumIn()
-	tFnArgs := make([]reflect.Type, numArgs)
-	for i := 0; i < numArgs; i++ {
-		tFnArgs[i] = tFn.In(i)
-	}
-	// activator with constructor injection
-	return func(ctx resolveContext) (any, error) {
-		// constructor injection
-		args := make([]reflect.Value, numArgs)
-		for i := 0; i < numArgs; i++ {
-			instance, err := callActivator(ctx, tFnArgs[i], nil /* no key is available for constructor injection */)
-			if err != nil {
-				return nil, err
-			}
-			args[i] = reflect.ValueOf(instance)
-		}
-		ret := vFn.Call(args)
-		instance := ret[0].Interface()
+func (e *cacheActivator) activate(ctx resolveContext) (any, error) {
+	// check cache
+	if instance, ok := ctx.getCache(e, e.policy); ok {
 		return instance, nil
 	}
-}
-
-func createSingletonInstanceActivator(instance any) activator {
-	// create identity activator
-	return func(ctx resolveContext) (any, error) {
-		return instance, nil
+	// activate new instance
+	instance, err := e.baseActivator.activate(ctx)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func createFieldInjectionActivator(baseActivator activator) activator {
-	return func(ctx resolveContext) (any, error) {
-		instance, err := baseActivator(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if err := injectToFields(ctx, instance); err != nil {
-			return nil, err
-		}
-		return instance, nil
-	}
-}
-
-func createCachedActivator(baseActivator activator, policy CachePolicy) activator {
-	if policy == NeverCache {
-		// for NeverCache policy, instance cache wrapper is not needed
-		return baseActivator
-	}
-	if policy == ScopedCache || policy == GlobalCache {
-		isGlobal := policy == GlobalCache
-		var act activator
-		act = func(ctx resolveContext) (any, error) {
-			if _, ok := ctx.getCache(&act, isGlobal); !ok {
-				ret, err := baseActivator(ctx)
-				if err != nil {
-					return nil, err
-				}
-				ctx.setCache(&act, ret, isGlobal)
-				return ret, nil
-			}
-			ret, _ := ctx.getCache(&act, isGlobal)
-			return ret, nil
-		}
-		return act
-	}
-	panic(fmt.Errorf("invalid CachePolicy value: %v", policy))
+	// store
+	ctx.setCache(e, instance, e.policy)
+	return instance, nil
 }

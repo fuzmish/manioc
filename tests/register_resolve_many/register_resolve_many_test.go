@@ -1,6 +1,7 @@
 package manioc_register_resolve_many_test
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -117,6 +118,22 @@ func Test_ResolveMany_Errors(t *testing.T) {
 
 		// resolve single will fail
 		_, err := manioc.Resolve[IMyService](manioc.WithScope(ctr))
+		assert.Error(err)
+	})
+
+	t.Run("If any of the resolutions fail, ResolveMany itself also fails", func(t *testing.T) {
+		assert := assert.New(t)
+
+		ctr := manioc.NewContainer()
+		assert.Nil(manioc.Register[IMyService, MyService1](manioc.WithContainer(ctr)))
+		assert.Nil(manioc.RegisterConstructor[IMyService](
+			func() (IMyService, error) { return nil, errors.New("error") },
+			manioc.WithContainer(ctr),
+		))
+		assert.Nil(manioc.Register[IMyService, MyService2](manioc.WithContainer(ctr)))
+
+		// resolve
+		_, err := manioc.ResolveMany[IMyService](manioc.WithScope(ctr))
 		assert.Error(err)
 	})
 }

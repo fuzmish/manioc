@@ -1,4 +1,4 @@
-FROM golang:1.19beta1-bullseye
+FROM golang:1.19rc1-bullseye
 
 RUN \
   # install golangci-lint

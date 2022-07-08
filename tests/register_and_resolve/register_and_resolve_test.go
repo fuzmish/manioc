@@ -1,6 +1,7 @@
 package manioc_register_and_resolve_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/fuzmish/manioc"
@@ -18,6 +19,14 @@ func (s *MyService) doSomething() {}
 
 func NewMyService() *MyService {
 	return &MyService{}
+}
+
+func NewMyServiceWithError() (*MyService, error) {
+	return &MyService{}, nil
+}
+
+func NewMyServiceRaiseError() (*MyService, error) {
+	return nil, errors.New("error")
 }
 
 func Test_RegisterAndResolve(t *testing.T) {
@@ -39,21 +48,55 @@ func Test_RegisterAndResolve(t *testing.T) {
 }
 
 func Test_RegisterConstructorAndResolve(t *testing.T) {
-	assert := assert.New(t)
+	t.Run("constructor without error", func(t *testing.T) {
+		assert := assert.New(t)
 
-	ctr := manioc.NewContainer()
+		ctr := manioc.NewContainer()
 
-	// register
-	assert.Nil(manioc.RegisterConstructor[IMyService](NewMyService, manioc.WithContainer(ctr)))
+		// register
+		assert.Nil(manioc.RegisterConstructor[IMyService](NewMyService, manioc.WithContainer(ctr)))
 
-	// resolve
-	ret, err := manioc.Resolve[IMyService](manioc.WithScope(ctr))
-	assert.NotNil(ret)
-	assert.Nil(err)
+		// resolve
+		ret, err := manioc.Resolve[IMyService](manioc.WithScope(ctr))
+		assert.NotNil(ret)
+		assert.Nil(err)
 
-	// verify that the value of ret is the instance of MyService
-	_, ok := ret.(*MyService)
-	assert.True(ok)
+		// verify that the value of ret is the instance of MyService
+		_, ok := ret.(*MyService)
+		assert.True(ok)
+	})
+
+	t.Run("constructor with error", func(t *testing.T) {
+		assert := assert.New(t)
+
+		ctr := manioc.NewContainer()
+
+		// register
+		assert.Nil(manioc.RegisterConstructor[IMyService](NewMyServiceWithError, manioc.WithContainer(ctr)))
+
+		// resolve
+		ret, err := manioc.Resolve[IMyService](manioc.WithScope(ctr))
+		assert.NotNil(ret)
+		assert.Nil(err)
+
+		// verify that the value of ret is the instance of MyService
+		_, ok := ret.(*MyService)
+		assert.True(ok)
+	})
+
+	t.Run("error propagation from constructor", func(t *testing.T) {
+		assert := assert.New(t)
+
+		ctr := manioc.NewContainer()
+
+		// register
+		assert.Nil(manioc.RegisterConstructor[IMyService](NewMyServiceRaiseError, manioc.WithContainer(ctr)))
+
+		// resolve
+		ret, err := manioc.Resolve[IMyService](manioc.WithScope(ctr))
+		assert.Nil(ret)
+		assert.Error(err)
+	})
 }
 
 func Test_RegisterInstanceAndResolve(t *testing.T) {
@@ -180,6 +223,15 @@ func Test_RegisterConstructor_Errors(t *testing.T) {
 		// It is designed to cause panic if verification fails.
 		ctr := manioc.NewContainer()
 		assert.Panics(t, func() {
+			_ = manioc.RegisterConstructor[IMyService](42, manioc.WithContainer(ctr))
+		})
+		assert.Panics(t, func() {
+			_ = manioc.RegisterConstructor[IMyService](struct{}{}, manioc.WithContainer(ctr))
+		})
+		assert.Panics(t, func() {
+			_ = manioc.RegisterConstructor[IMyService](&struct{}{}, manioc.WithContainer(ctr))
+		})
+		assert.Panics(t, func() {
 			_ = manioc.RegisterConstructor[IMyService](func() {}, manioc.WithContainer(ctr))
 		})
 		assert.Panics(t, func() {
@@ -194,6 +246,12 @@ func Test_RegisterConstructor_Errors(t *testing.T) {
 		assert.Panics(t, func() {
 			_ = manioc.RegisterConstructor[IMyService](func() *struct{} { return &struct{}{} }, manioc.WithContainer(ctr))
 		})
+		assert.Panics(t, func() {
+			_ = manioc.RegisterConstructor[IMyService](func() (IMyService, int) { return nil, 42 }, manioc.WithContainer(ctr))
+		})
+		assert.Panics(t, func() {
+			_ = manioc.RegisterConstructor[IMyService](func() (int, error) { return 42, nil }, manioc.WithContainer(ctr))
+		})
 		assert.NotPanics(t, func() {
 			_ = manioc.RegisterConstructor[IMyService](NewMyService, manioc.WithContainer(ctr))
 		})
@@ -203,6 +261,11 @@ func Test_RegisterConstructor_Errors(t *testing.T) {
 				manioc.WithContainer(ctr),
 			)
 		})
+	})
+
+	t.Run("ctor should not be nil", func(t *testing.T) {
+		ctr := manioc.NewContainer()
+		assert.Error(t, manioc.RegisterConstructor[IMyService, func() IMyService](nil, manioc.WithContainer(ctr)))
 	})
 }
 
