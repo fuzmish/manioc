@@ -133,6 +133,10 @@ func Test_Unregister(t *testing.T) {
 
 		// verify
 		assert.False(manioc.IsRegistered[IMyService](manioc.WithContainer(ctr)))
+
+		// unable to resolve after unregistration
+		_, err := manioc.Resolve[IMyService](manioc.WithScope(ctr))
+		assert.Error(err)
 	})
 }
 

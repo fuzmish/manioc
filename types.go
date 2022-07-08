@@ -35,23 +35,25 @@ const (
 	SyncCacheMode
 )
 
-// Activator is a function that creates a service instance on given context.
-type activator func(ctx resolveContext) (any, error)
-
-// resolveContext is an interface required for the activator
-// to obtain registration information from the container to resolve dependencies.
-type resolveContext interface {
-	getActivators(targetType reflect.Type, key any) []activator
-	setCache(cacheKey any, value any, isGlobal bool)
-	getCache(cacheKey any, isGlobal bool) (any, bool)
+type registryKey struct {
+	serviceType reflect.Type
+	serviceKey  any
 }
 
-// registerContext is an interface required to register dependency information
-// and the associated activator into the container.
+type activator interface {
+	activate(ctx resolveContext) (any, error)
+}
+
+type resolveContext interface {
+	resolve(key registryKey) (any, error)
+	setCache(key any, value any, policy CachePolicy)
+	getCache(key any, policy CachePolicy) (any, bool)
+}
+
 type registerContext interface {
-	resolveContext
-	registerActivator(targetType reflect.Type, key any, act activator) error
-	unregisterActivators(targetType reflect.Type, key any) bool
+	register(key registryKey, entry activator) error
+	isRegistered(key registryKey) bool
+	unregister(key registryKey) bool
 }
 
 // Scope is an interface that expresses the cache scope of a container.

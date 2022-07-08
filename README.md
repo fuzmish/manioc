@@ -15,7 +15,7 @@
 
 </h2>
 
-|⚠️ This library is currently in pre-alpha stage. Breaking changes may occur at any time. Also, we are in a technical research phase. Not provided for production use.|
+|⚠️ This library is currently in pre-alpha stage. Breaking changes may occur at any time. Not recommended for production use.|
 |-|
 
 ## Introduction
@@ -108,10 +108,10 @@ The cache policy can be specified at registration using the `WithCachePolicy` op
 manioc.Register[IMyService, MyService](manioc.WithCachePolicy(manioc.ScopedCache))
 ```
 In addition, the following helper functions are provided to make it easy to set policies:
-- `RegisterTransient`, `RegisterTransientConstructor`: It is equivalent to setting a `NeverCache` policy and calling `Register` or `RegisterConstructor` respectively.
+- `RegisterTransient`, `RegisterTransientConstructor`: It is equivalent to set `NeverCache` policy and calling `Register` or `RegisterConstructor` respectively.
   - That is, it is equivalent to the default options for `Register` and `RegisterConstructor`.
-- `RegisterScoped`, `RegisterScopedConstructor`: It is equivalent to setting a `ScopedCache` policy and calling `Register` or `RegisterConstructor` respectively.
-- `RegisterSingleton`, `RegisterSingletonConstructor`: It is equivalent to setting a `GlobalCache` policy and calling `Register` or `RegisterConstructor` respectively.
+- `RegisterScoped`, `RegisterScopedConstructor`: It is equivalent to set `ScopedCache` policy and calling `Register` or `RegisterConstructor` respectively.
+- `RegisterSingleton`, `RegisterSingletonConstructor`: It is equivalent to set `GlobalCache` policy and calling `Register` or `RegisterConstructor` respectively.
 
 ### 4. Scope
 
@@ -159,7 +159,7 @@ The following three modes are available:
 
 Note that these modes only affect instance caches for dependencies registered with `ScopedCache` cache policy, not for `NeverCache` and `GlobalCache` policies.
 
-### 5. Constructor / Field Injection
+### 5. Constructor Injection / Field Injection
 
 In this library, dependency injection is performed on constructors or fields.
 
@@ -289,7 +289,7 @@ The `MustResolve` and `MustResolveMany` functions are variants of the API that c
 var instance IFooService = manioc.MustResolve[IFooService]()
 ```
 
-### 9. Query the registry
+### 9. Query the Registry
 
 To check if a dependency on a given interface is registered with a container, use the `IsRegistered` function:
 ```go
@@ -309,6 +309,38 @@ To remove registered dependencies, use the `Unregister` function. This operation
 manioc.Unregister[IMyService](manioc.WithRegisterKey("another"))
 ```
 The `Unregister` function returns `true` if one or more registrations were deleted, or `false` if none existed.
+
+### 10. Non-interface Types
+
+In the above discussion, we have illustrated how to register an interface type and its implementation. However, manioc accepts other types than these. The parameters accepted by each API are as follows:
+- `Register[T, U]`: It can be registered for any type `T`, where `U` is assignable to `T`.
+  - (Special Case): If `T` is an interface, `U` is also accepted as the type itself that implements `T` (i.e., not a pointer). In this case, `Register[T, U]` is equivalent to `Register[T, *U]`.
+- `RegisterConstructor[T, U](ctor U)`: It can be registered if for any type `T`, where `U` is the next function type:
+  - The return type of the function is `W` where `W` is assignable to `T`.
+  - The return type of the function is `(W, error)` where `W` is assignable to `T`.
+- `RegisterInstance[T](instance T)`: It can be registered for any type `T`, if the `instance` is assignable to type `T`.
+- `Resolve[T]`: You can use any type that can be registered with the above functions.
+
+These behaviors will help you to use containers in more advanced ways. Here are some examples:
+- Registration of constants:
+  ```go
+  // register
+  manioc.RegisterInstance(42, manioc.WithRegisterKey("MY_SPECIAL_CONSTANT_VALUE"))
+  // resolve
+  mySpecialConstantValue := manioc.MustResolve[int](manioc.WithResolveKey("MY_SPECIAL_CONSTANT_VALUE"))
+  ```
+- Registration of non-interface types singleton values:
+  ```go
+  // example
+  type Config struct {
+      Property int
+  }
+  // register as singleton value
+  manioc.RegisterInstance(&Config{Property: 42})
+  // resolve
+  config := manioc.MustResolve[*Config]()
+  fmt.Println(config.Property) // 42
+  ```
 
 ## Tips
 

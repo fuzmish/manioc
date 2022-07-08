@@ -1,5 +1,9 @@
 package manioc
 
+import (
+	"fmt"
+)
+
 // options for Register
 type registerOptions struct {
 	container Container
@@ -44,7 +48,12 @@ func (opt *withCachePolicy) apply(options *registerOptions) {
 }
 
 func WithCachePolicy(policy CachePolicy) RegisterOption {
-	return &withCachePolicy{policy: policy}
+	switch policy {
+	case GlobalCache, ScopedCache, NeverCache:
+		return &withCachePolicy{policy: policy}
+	default:
+		panic(fmt.Errorf("invalid CachePolicy value: `%v`", policy))
+	}
 }
 
 //
