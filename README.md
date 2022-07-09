@@ -226,6 +226,8 @@ func main() {
 
 Constructor and field injections can be used together. Also, if the dependencies are registered correctly, resolution is performed recursively.
 
+Note that if a constructor-injected instance is set to a field tagged `inject`, it will be overwritten by the field injection.
+
 ### 6. Service Key
 
 If multiple implementations are to be registered, they can be keyed with arbitrary values to distinguish them. Use the `WithRegisterKey` option when registering:
@@ -342,6 +344,43 @@ These behaviors will help you to use containers in more advanced ways. Here are 
   fmt.Println(config.Property) // 42
   ```
 
+### 11. Direct Resolution
+
+In the above discussion, you need to register the type, constructor, or instance with the container before resolve it. However, the `ResolveInstance` and `ResolveFunction` functions can be used to perform in-place resolution without registering the dependencies from which the resolution starts.
+
+For example, suppose that you have the struct `MyService` that depends on the `IAnotherService` interface:
+```go
+type MyService struct {
+    another IAnotherService `manioc:"inject"`
+}
+```
+In any case, the dependency on `IAnotherService` should be registered with the container:
+```go
+// register AnotherService as an implementation of IAnotherService
+manioc.Register[IAnotherService, AnotherService]()
+```
+Now you can perform resolution of `MyService` as follows:
+```go
+// in-place resolution for instances
+ret, _ := manioc.ResolveInstance(&MyService{})
+// then, ret.another holds the instance of AnotherService
+```
+Or, to resolve `MyService` with its constructor, use `ResolveFunction`:
+```go
+// the constructor of MyService
+func NewMyService(another IAnotherService) *MyService {
+    return &MyService{another: another}
+}
+
+// in-place resolution for functions
+ret, _ := manioc.ResolveFunction[*MyService](NewMyService)
+// then, ret.another holds the instance of AnotherService
+```
+
+Note that the `WithResolveKey` option is ignored in calls for `ResolveInstance` and `ResolveFunction`, since the starting dependency does not refer to the registration information.
+
+The *must*-variants; the helper functions `MustResolveInstance` and `MustResolveFunction` are also available.
+
 ## Tips
 
 ### Known Issues
@@ -352,6 +391,7 @@ These behaviors will help you to use containers in more advanced ways. Here are 
   - In summary, the following APIs cannot perform type checking statically, but will do it at runtime by reflection:
     - `RegisterConstructor` (`RegisterSingletonConstructor`, `RegisterScopedConstructor`, `RegisterTransientConstructor`)
     - `Register` (`RegisterSingleton`, `RegisterScoped`, `RegisterTransient`)
+    - `ResolveFunction` (`MustResolveFunction`)
   - In contrast, the following APIs are type-checked statically:
     - `RegisterInstance`
   - Also, the following APIs do not need to use type parameter constraints, so the above problem does not occur:

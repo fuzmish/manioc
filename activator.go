@@ -1,12 +1,41 @@
 package manioc
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"unsafe"
 )
 
 type implementationActivator struct {
 	implementationType reflect.Type
+}
+
+func newImplementationActivator[TInterface any, TImplementation any]() activator {
+	// check type parameter
+	tIface := typeof[TInterface]()
+	tImpl := typeof[TImplementation]()
+	if tIface.Kind() == reflect.Interface && tImpl.Kind() != reflect.Pointer {
+		tImpl = reflect.PointerTo(tImpl)
+	}
+	tImplElm := tImpl
+	if tImpl.Kind() == reflect.Pointer {
+		tImplElm = tImpl.Elem()
+	}
+	if tImplElm.Kind() == reflect.Interface {
+		panic(fmt.Errorf(
+			"TImplementation=`%s` should not be an interface type",
+			nameof[TImplementation](),
+		))
+	}
+	if !tImpl.AssignableTo(tIface) {
+		panic(fmt.Errorf(
+			"TImplementation=`%s` should be assignable to TInterface=`%s`",
+			nameof[TImplementation](),
+			nameof[TInterface](),
+		))
+	}
+	return &implementationActivator{implementationType: tImpl}
 }
 
 func (e *implementationActivator) activate(ctx resolveContext) (any, error) {
@@ -23,12 +52,75 @@ type instanceActivator struct {
 	instance any
 }
 
+func newInstanceActivator(instance any) (activator, error) {
+	if !reflect.ValueOf(instance).IsValid() {
+		return nil, errors.New("instance is invalid")
+	}
+	//nolint:exhaustive
+	switch reflect.TypeOf(instance).Kind() {
+	case reflect.Chan,
+		reflect.Func,
+		reflect.Map,
+		reflect.Pointer,
+		reflect.UnsafePointer,
+		reflect.Interface,
+		reflect.Slice:
+		if reflect.ValueOf(instance).IsNil() {
+			return nil, errors.New("instance is nil")
+		}
+	}
+	return &instanceActivator{instance: instance}, nil
+}
+
 func (e *instanceActivator) activate(ctx resolveContext) (any, error) {
 	return e.instance, nil
 }
 
 type constructorActivator struct {
 	constructor any
+}
+
+func newConstructorActivator[T any, TConstructor any](ctor TConstructor) (activator, error) {
+	// check type parameters
+	tRet := typeof[T]()
+	tCtor := typeof[TConstructor]()
+	if tCtor.Kind() != reflect.Func {
+		panic(errors.New("the type of TConstructor should be a function"))
+	}
+	switch tCtor.NumOut() {
+	case 1:
+		// out[0] should be assignable to T
+		if !tCtor.Out(0).AssignableTo(tRet) {
+			panic(fmt.Errorf(
+				"the return value TConstructor=`%s` should be assignable to T=`%s`",
+				nameof[TConstructor](),
+				nameof[T](),
+			))
+		}
+	case 2:
+		// out[0] should be assignable to T
+		if !tCtor.Out(0).AssignableTo(tRet) {
+			panic(fmt.Errorf(
+				"the first return value TConstructor=`%s` should be assignable to T=`%s`",
+				nameof[TConstructor](),
+				nameof[T](),
+			))
+		}
+		// out[1] should be an error
+		if tCtor.Out(1) != typeof[error]() {
+			panic(fmt.Errorf(
+				"the second return value of TConstructor=`%s` should be error",
+				nameof[TConstructor](),
+			))
+		}
+	default:
+		panic(errors.New("unexpected number of return values"))
+	}
+	// check ctor value
+	if !reflect.ValueOf(ctor).IsValid() || reflect.ValueOf(ctor).IsNil() {
+		return nil, errors.New("ctor is invalid or nil")
+	}
+	return &constructorActivator{constructor: ctor}, nil
 }
 
 func (e *constructorActivator) activate(ctx resolveContext) (any, error) {

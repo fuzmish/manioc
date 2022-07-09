@@ -30,7 +30,6 @@ type BarServiceSimple struct {
 func (s *BarServiceSimple) doBar() {}
 
 func NewBarServiceSimple() *BarServiceSimple {
-	//nolint
 	return &BarServiceSimple{}
 }
 
@@ -41,7 +40,7 @@ type BarServiceUnexported struct {
 func (s *BarServiceUnexported) doBar() {}
 
 type BarServiceInvalidTag struct {
-	//nolint
+	//nolint:unused
 	foo IFooService `manioc:"iject"` // typo
 }
 
@@ -216,7 +215,6 @@ func Test_FieldInjection_RegisteredInstance(t *testing.T) {
 
 		// register
 		ctr := manioc.NewContainer()
-		//nolint
 		assert.Nil(manioc.RegisterInstance[IBarService](&BarServiceSimple{}, manioc.WithContainer(ctr)))
 
 		// resolve
@@ -230,7 +228,6 @@ func Test_FieldInjection_RegisteredInstance(t *testing.T) {
 		// register
 		ctr := manioc.NewContainer()
 		assert.Nil(manioc.Register[IFooService, FooService1](manioc.WithContainer(ctr)))
-		//nolint
 		assert.Nil(manioc.RegisterInstance[IBarService](&BarServiceSimple{}, manioc.WithContainer(ctr)))
 
 		// resolve

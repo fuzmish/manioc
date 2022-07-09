@@ -43,3 +43,19 @@ func ResolveMany[TInterface any](opts ...ResolveOption) ([]TInterface, error) {
 func MustResolveMany[TInterface any](opts ...ResolveOption) []TInterface {
 	return MustResolve[[]TInterface](opts...)
 }
+
+func MustResolveInstance[T any](instance T, opts ...ResolveOption) T {
+	ret, err := ResolveInstance(instance, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func MustResolveFunction[T any, TFunction any](fun TFunction, opts ...ResolveOption) T {
+	ret, err := ResolveFunction[T](fun, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}

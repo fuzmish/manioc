@@ -54,7 +54,6 @@ func Test_ResolveWithEmptyInterface(t *testing.T) {
 		assert.IsType(&MyService{}, ret)
 		ret, err = manioc.Resolve[IMyService](manioc.WithScope(ctr))
 		assert.Nil(err)
-		//nolint
 		assert.IsType(&MyService2{}, ret)
 	})
 }
