@@ -69,7 +69,6 @@ type D struct {
 func (d *D) doD() {}
 
 func NewD(a IA) *D {
-	//nolint
 	return &D{a: a}
 }
 
@@ -87,7 +86,6 @@ type E struct {
 func (e *E) doE() {}
 
 func NewE(b []IB, d ID) *E {
-	//nolint
 	return &E{b: b, d: d}
 }
 
@@ -157,8 +155,6 @@ func Test_ComplexInjection(t *testing.T) {
 	refD := manioc.MustResolve[ID](manioc.WithScope(ctr))
 
 	// check injected instances
-
-	//nolint
 	e, ok := ret.(*E)
 	assert.True(ok)
 	assert.Len(e.a, 1)

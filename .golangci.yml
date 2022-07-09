@@ -3,9 +3,11 @@ issues:
     - path: _test\.go
       linters:
         # disabled manually
+        - exhaustruct
         - funlen
         - paralleltest
         - testpackage
+        - varnamelen
 linters-settings:
   gocritic:
     disabled-checks:

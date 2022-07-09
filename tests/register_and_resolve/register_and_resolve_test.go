@@ -194,6 +194,8 @@ func Test_Register_Errors(t *testing.T) {
 		assert.Panics(t, func() { _ = manioc.Register[IMyService, string](manioc.WithContainer(ctr)) })
 		assert.Panics(t, func() { _ = manioc.Register[IMyService, *struct{}](manioc.WithContainer(ctr)) })
 		assert.NotPanics(t, func() { _ = manioc.Register[IMyService, MyService](manioc.WithContainer(ctr)) })
+		assert.Panics(t, func() { _ = manioc.Register[IMyService, IMyService](manioc.WithContainer(ctr)) })
+		assert.Panics(t, func() { _ = manioc.Register[IMyService, *IMyService](manioc.WithContainer(ctr)) })
 	})
 }
 
