@@ -30,7 +30,7 @@ test-vettool: build-vettool
 	if [ $$(go vet -vettool=../../../bin/manioctypechecker . 2>&1 \
 		| tee /proc/$$$$/fd/2 \
 		| grep a.go \
-		| wc -l) -ne 55 ]; then exit 1; fi
+		| wc -l) -ne 85 ]; then exit 1; fi
 
 test-golangci-plugin: build-golangci-plugin
 	rm -fr ~/.cache/golangci-lint
@@ -38,7 +38,7 @@ test-golangci-plugin: build-golangci-plugin
 	if [ $$(golangci-lint run --out-format=tab \
 		| tee /proc/$$$$/fd/2 \
 		| grep manioctypechecker \
-		| wc -l) -ne 55 ]; then exit 1; fi
+		| wc -l) -ne 85 ]; then exit 1; fi
 
 all: build-vettool build-golangci-plugin
 
