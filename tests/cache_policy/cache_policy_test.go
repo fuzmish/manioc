@@ -104,7 +104,7 @@ func Test_CachePolicy_ScopedCache(t *testing.T) {
 			assert.Nil(registerFunction(ctr))
 
 			// Open scope.
-			scope1, _ := manioc.OpenScope(manioc.WithParentScope(ctr))
+			scope1, _ := ctr.OpenScope()
 
 			ret1, err := manioc.Resolve[IMyService](manioc.WithScope(scope1))
 			assert.Nil(err)
@@ -117,7 +117,7 @@ func Test_CachePolicy_ScopedCache(t *testing.T) {
 			assert.Same(ret1, ret2)
 
 			// Open another scope.
-			scope2, _ := manioc.OpenScope(manioc.WithParentScope(ctr))
+			scope2, _ := ctr.OpenScope()
 
 			ret3, err := manioc.Resolve[IMyService](manioc.WithScope(scope2))
 			assert.Nil(err)

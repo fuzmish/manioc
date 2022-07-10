@@ -4,6 +4,10 @@ func NewContainer() Container {
 	return newDefaultContainer()
 }
 
+func OpenScope(opts ...OpenScopeOption) (Scope, func()) {
+	return globalContainer.OpenScope(opts...)
+}
+
 func RegisterSingleton[TInterface any, TImplementation any](opts ...RegisterOption) error {
 	return Register[TInterface, TImplementation](append(opts, WithCachePolicy(GlobalCache))...)
 }

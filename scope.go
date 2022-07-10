@@ -12,7 +12,19 @@ func (c *defaultScope) getResolveContext() resolveContext {
 	return c.context
 }
 
-func (c *defaultScope) createScope(mode ScopeCacheMode) (Scope, func()) {
+// Open new child scope.
+// The second return value is a cleanup function, which you can call it
+// to explicitly close the scope. After this function is called,
+// the resolution request for the corresponding scope will not work.
+func (c *defaultScope) OpenScope(opts ...OpenScopeOption) (Scope, func()) {
+	// merge options
+	options := &openScopeOptions{
+		cacheMode: DefaultCacheMode,
+	}
+	for _, opt := range opts {
+		opt.apply(options)
+	}
+	// create new scope
 	ret := &defaultScope{
 		context: &defaultContext{
 			registry:    c.context.registry,
@@ -21,14 +33,14 @@ func (c *defaultScope) createScope(mode ScopeCacheMode) (Scope, func()) {
 		},
 		childScopes: make([]Scope, 0),
 	}
-	if mode == InheritCacheMode {
+	if options.cacheMode == InheritCacheMode {
 		// inherit parent cache
 		for k, v := range c.context.scopedCache {
 			ret.context.scopedCache[k] = v
 		}
 		// register child scope into parent
 		c.childScopes = append(c.childScopes, ret)
-	} else if mode == SyncCacheMode {
+	} else if options.cacheMode == SyncCacheMode {
 		// syncrhonize cache
 		ret.context.scopedCache = c.context.scopedCache
 		// register child scope into parent
@@ -49,21 +61,4 @@ func (c *defaultScope) closeScope() {
 		c.childScopes = nil
 		c.context = nil
 	}
-}
-
-// Create new child scope.
-// The second return value is a cleanup function, which you can call it
-// to explicitly close the scope. After this function is called,
-// the resolution request for the corresponding scope will not work.
-func OpenScope(opts ...OpenScopeOption) (Scope, func()) {
-	// merge options
-	options := &openScopeOptions{
-		parent:    globalContainer,
-		cacheMode: DefaultCacheMode,
-	}
-	for _, opt := range opts {
-		opt.apply(options)
-	}
-	// create scoped container
-	return options.parent.createScope(options.cacheMode)
 }
