@@ -26,7 +26,7 @@ func Test_ContainerAndScope(t *testing.T) {
 	assert.Nil(manioc.Register[IMyService, MyService](manioc.WithContainer(ctr)))
 
 	// open scope
-	scope, cleanup := manioc.OpenScope(manioc.WithParentScope(ctr))
+	scope, cleanup := ctr.OpenScope()
 
 	// resolve within the scope
 	ret, err := manioc.Resolve[IMyService](manioc.WithScope(scope))
@@ -59,9 +59,8 @@ func Test_Scope_WithDefaultCacheMode(t *testing.T) {
 	ret := manioc.MustResolve[IMyService](manioc.WithScope(ctr))
 
 	// open scope, without inherit/sync instance caches
-	scope, cleanup := manioc.OpenScope(
-		manioc.WithParentScope(ctr),
-		// manioc.WithCacheMode(manioc.DefaultCacheMode),
+	scope, cleanup := ctr.OpenScope(
+	// manioc.WithCacheMode(manioc.DefaultCacheMode),
 	)
 	defer cleanup()
 	retScoped := manioc.MustResolve[IMyService](manioc.WithScope(scope))
@@ -83,10 +82,7 @@ func Test_Scope_WithInheritCacheMode(t *testing.T) {
 	ret := manioc.MustResolve[IMyService](manioc.WithScope(ctr))
 
 	// open scope, inherit instance caches
-	scope, cleanup := manioc.OpenScope(
-		manioc.WithParentScope(ctr),
-		manioc.WithCacheMode(manioc.InheritCacheMode),
-	)
+	scope, cleanup := ctr.OpenScope(manioc.WithCacheMode(manioc.InheritCacheMode))
 	defer cleanup()
 	retScoped := manioc.MustResolve[IMyService](manioc.WithScope(scope))
 
@@ -111,10 +107,7 @@ func Test_Scope_WithSyncCacheMode(t *testing.T) {
 	ret := manioc.MustResolve[IMyService](manioc.WithScope(ctr))
 
 	// open scope, sync instance caches
-	scope, cleanup := manioc.OpenScope(
-		manioc.WithParentScope(ctr),
-		manioc.WithCacheMode(manioc.SyncCacheMode),
-	)
+	scope, cleanup := ctr.OpenScope(manioc.WithCacheMode(manioc.SyncCacheMode))
 	defer cleanup()
 	retScoped := manioc.MustResolve[IMyService](manioc.WithScope(scope))
 
@@ -143,12 +136,11 @@ func Test_NestedScope_WithDefaultCacheMode(t *testing.T) {
 	assert.Nil(manioc.RegisterScoped[IMyService, MyService](manioc.WithContainer(ctr)))
 
 	// open parent scope
-	scope, cleanup := manioc.OpenScope(manioc.WithParentScope(ctr))
+	scope, cleanup := ctr.OpenScope()
 
 	// open child scope
-	childScope, _ := manioc.OpenScope(
-		manioc.WithParentScope(scope),
-		// manioc.WithCacheMode(manioc.DefaultCacheMode),
+	childScope, _ := scope.OpenScope(
+	// manioc.WithCacheMode(manioc.DefaultCacheMode),
 	)
 
 	// close parent
@@ -170,13 +162,10 @@ func Test_NestedScope_WithInheritCacheMode(t *testing.T) {
 	assert.Nil(manioc.RegisterScoped[IMyService, MyService](manioc.WithContainer(ctr)))
 
 	// open parent scope
-	scope, cleanup := manioc.OpenScope(manioc.WithParentScope(ctr))
+	scope, cleanup := ctr.OpenScope()
 
 	// open child scope
-	childScope, _ := manioc.OpenScope(
-		manioc.WithParentScope(scope),
-		manioc.WithCacheMode(manioc.InheritCacheMode),
-	)
+	childScope, _ := scope.OpenScope(manioc.WithCacheMode(manioc.InheritCacheMode))
 
 	// close parent
 	cleanup()
@@ -197,13 +186,10 @@ func Test_NestedScope_WithSyncCacheMode(t *testing.T) {
 	assert.Nil(manioc.RegisterScoped[IMyService, MyService](manioc.WithContainer(ctr)))
 
 	// open parent scope
-	scope, cleanup := manioc.OpenScope(manioc.WithParentScope(ctr))
+	scope, cleanup := ctr.OpenScope()
 
 	// open child scope
-	childScope, _ := manioc.OpenScope(
-		manioc.WithParentScope(scope),
-		manioc.WithCacheMode(manioc.SyncCacheMode),
-	)
+	childScope, _ := scope.OpenScope(manioc.WithCacheMode(manioc.SyncCacheMode))
 
 	// close parent
 	cleanup()
@@ -214,4 +200,21 @@ func Test_NestedScope_WithSyncCacheMode(t *testing.T) {
 	// then automatically the child scope is also closed.
 	_, err = manioc.Resolve[IMyService](manioc.WithScope(childScope))
 	assert.Error(err)
+}
+
+func Test_GlobalContainer(t *testing.T) {
+	assert := assert.New(t)
+
+	// register
+	assert.Nil(manioc.Register[IMyService, MyService]())
+
+	// resolve
+	assert.NotNil(manioc.MustResolve[IMyService]())
+
+	// open scode
+	scope, cleanup := manioc.OpenScope()
+	defer cleanup()
+
+	// resolve in scope
+	assert.NotNil(manioc.MustResolve[IMyService](manioc.WithScope(scope)))
 }

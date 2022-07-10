@@ -98,24 +98,11 @@ func WithResolveKey(key any) ResolveOption {
 //
 
 type openScopeOptions struct {
-	parent    Scope
 	cacheMode ScopeCacheMode
 }
 
 type OpenScopeOption interface {
 	apply(*openScopeOptions)
-}
-
-// WithParentScope
-
-type withParentScope struct{ parent Scope }
-
-func (opt *withParentScope) apply(options *openScopeOptions) {
-	options.parent = opt.parent
-}
-
-func WithParentScope(parent Scope) OpenScopeOption {
-	return &withParentScope{parent: parent}
 }
 
 // WithCacheMode

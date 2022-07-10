@@ -59,7 +59,7 @@ type registerContext interface {
 // Scope is an interface that expresses the cache scope of a container.
 type Scope interface {
 	getResolveContext() resolveContext
-	createScope(mode ScopeCacheMode) (Scope, func())
+	OpenScope(opts ...OpenScopeOption) (Scope, func())
 	closeScope()
 }
 

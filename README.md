@@ -121,10 +121,10 @@ A scope only affects resolution if the cache policy is `ScopedCache`. By using s
 newScope1, _ := manioc.OpenScope()
 // open scoep from specific container
 var ctr Container = //...
-newScope2, _ := manioc.OpenScope(manioc.WithParentScope(ctr))
+newScope2, _ := ctr.OpenScope()
 // open scope from specific scope
 var scope Scope = //...
-newScope3, _ := manioc.OpenScope(manioc.WithParentScope(scope))
+newScope3, _ := scope.OpenScope()
 ```
 A container can use itself as the most global scope.
 
@@ -147,10 +147,7 @@ func handler() {
 You can configure the behavior of the scope with respect to the instance cache with the `WithCacheMode` option:
 ```go
 // for example
-scope, cleanup := manioc.OpenScope(
-  manioc.WithParentScope(ctr),
-  manioc.WithCacheMode(InheritCacheMode),
-)
+scope, cleanup := manioc.OpenScope(manioc.WithCacheMode(InheritCacheMode))
 ```
 The following three modes are available:
 - `DefaultCacheMode`: Instance caches are independent across scopes. Even if the parent scope is closed, the child scope will remain open.
