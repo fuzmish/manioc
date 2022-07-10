@@ -65,7 +65,7 @@ func checkManiocRegisterConstructorTypeParameters(
 		pass.Report(analysis.Diagnostic{
 			Pos: expr.Pos(),
 			Message: fmt.Sprintf(
-				"TConstructor should be a function type, but `%v` is given",
+				"The argument type should be a function type, but `%v` is given",
 				typeCategoryName(tTConstructor),
 			),
 		})
@@ -77,7 +77,7 @@ func checkManiocRegisterConstructorTypeParameters(
 	if rLen < 1 || rLen > 2 {
 		pass.Report(analysis.Diagnostic{
 			Pos:     expr.Pos(),
-			Message: "The number of TConstructor return values should be either one or two",
+			Message: "The number of function return values should be either one or two",
 		})
 		return
 	}
@@ -87,11 +87,12 @@ func checkManiocRegisterConstructorTypeParameters(
 		pass.Report(analysis.Diagnostic{
 			Pos: expr.Pos(),
 			Message: fmt.Sprintf(
-				"The first return type of TConstructor `%v` is not assignable to `%v`",
+				"The type of the first return value `%v` is not assignable to `%v`",
 				tRet,
 				tTInterface,
 			),
 		})
+		return
 	}
 	// check the second return type
 	if rLen != 1 {
@@ -101,7 +102,7 @@ func checkManiocRegisterConstructorTypeParameters(
 			pass.Report(analysis.Diagnostic{
 				Pos: expr.Pos(),
 				Message: fmt.Sprintf(
-					"The second return type of TConstructor should be `error`, but `%v` is given",
+					"The type of the second return value should be `error`, but `%v` is given",
 					tRetError,
 				),
 			})
@@ -116,20 +117,37 @@ func checkManiocRegisterTypeParameters(
 	tTImplementation types.Type,
 ) {
 	// if TInterface is an interface type
+	tPtrTImplementation := tTImplementation
 	if _, ok := tTInterface.Underlying().(*types.Interface); ok {
 		// and TImplementation is not a pointer type
 		if _, ok := tTImplementation.(*types.Pointer); !ok {
 			// then, replace TImplementation with its pointer type implicitly
-			tTImplementation = types.NewPointer(tTImplementation)
+			tPtrTImplementation = types.NewPointer(tTImplementation)
 		}
 	}
 
-	// check if TImplementation is assignable to TInterface
-	if !types.AssignableTo(tTImplementation, tTInterface) {
+	// check if TImplementation is not an interface type
+	tElmTImplementation := tPtrTImplementation
+	if tPtr, ok := tElmTImplementation.(*types.Pointer); ok {
+		tElmTImplementation = tPtr.Elem()
+	}
+	if _, ok := tElmTImplementation.Underlying().(*types.Interface); ok {
 		pass.Report(analysis.Diagnostic{
 			Pos: expr.Pos(),
 			Message: fmt.Sprintf(
-				"TImplementation=`%v` is not assignable to TInterface=`%v`",
+				"The implementation type `%v` should not be an interface",
+				tElmTImplementation,
+			),
+		})
+		return
+	}
+
+	// check if TImplementation is assignable to TInterface
+	if !types.AssignableTo(tPtrTImplementation, tTInterface) {
+		pass.Report(analysis.Diagnostic{
+			Pos: expr.Pos(),
+			Message: fmt.Sprintf(
+				"`%v` is not assignable to `%v`",
 				tTImplementation,
 				tTInterface,
 			),
@@ -170,7 +188,9 @@ func checkManiocRegisterConstructorCall(pass *analysis.Pass, call *ast.CallExpr)
 	case "RegisterConstructor",
 		"RegisterSingletonConstructor",
 		"RegisterScopedConstructor",
-		"RegisterTransientConstructor":
+		"RegisterTransientConstructor",
+		"ResolveFunction",
+		"MustResolveFunction":
 		tTInterface := pass.TypesInfo.TypeOf(index)
 		tTConstructor := pass.TypesInfo.TypeOf(call.Args[0])
 		checkManiocRegisterConstructorTypeParameters(pass, call, tTInterface, tTConstructor)
@@ -201,7 +221,9 @@ func checkManiocRegisterFunction(pass *analysis.Pass, indexList *ast.IndexListEx
 	case "RegisterConstructor",
 		"RegisterSingletonConstructor",
 		"RegisterScopedConstructor",
-		"RegisterTransientConstructor":
+		"RegisterTransientConstructor",
+		"ResolveFunction",
+		"MustResolveFunction":
 		tTInterface := pass.TypesInfo.TypeOf(indexList.Indices[0])
 		tTConstructor := pass.TypesInfo.TypeOf(indexList.Indices[1])
 		checkManiocRegisterConstructorTypeParameters(pass, indexList, tTInterface, tTConstructor)
