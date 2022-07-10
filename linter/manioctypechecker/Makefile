@@ -19,7 +19,7 @@ mod:
 	) > go.mod
 	go mod tidy
 
-build-vettool: mod
+build-vettool:
 	go build -o bin/manioctypechecker cmd/manioctypechecker/main.go
 
 build-golangci-plugin: mod

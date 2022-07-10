@@ -11,13 +11,18 @@ You can integrate this linter into [VSCode](https://code.visualstudio.com/) usin
 
 ### With `go vet`
 
-1. Install:
+1. Build a vettool binary.:
    ```sh
-   $ go install github.com/fuzmish/manioc/linter/manioctypechecker/cmd/manioctypechecker@latest
+   $ cd /usr/local/src
+   $ git clone --depth=1 https://github.com/fuzmish/manioc
+   $ cd manioc/linter/manioctypechecker
+   $ make build-vettool
+   $ ls bin
+   manioctypechecker
    ```
 2. Move to your project, then run:
    ```sh
-   $ go vet -vettool=$(which manioctypechecker) ./...
+   $ go vet -vettool=/usr/local/src/manioc/linter/manioctypechecker/bin/manioctypechecker ./...
    ```
 
 ### With `golangci-lint`
@@ -27,10 +32,10 @@ You can integrate this linter into [VSCode](https://code.visualstudio.com/) usin
    $ golangci-lint --version
    golangci-lint has version v1.46.2 built from (unknown, mod sum: "...") on (unknown)
    ```
-2. Build a plugin binary. Set the version of `golangci-lint` via `GOLANGCI_LINT_TARGET_VERSION`:
+2. Build a plugin binary. Set the version of `golangci-lint` to the environment variable `GOLANGCI_LINT_TARGET_VERSION` if needed:
    ```sh
    $ cd /usr/local/src
-   $ git clone https://github.com/fuzmish/manioc
+   $ git clone --depth=1 https://github.com/fuzmish/manioc
    $ cd manioc/linter/manioctypechecker
    $ GOLANGCI_LINT_TARGET_VERSION=v1.46.2 make build-golangci-plugin
    $ ls bin
