@@ -1,0 +1,14 @@
+issues:
+  max-issues-per-linter: 1000
+  max-same-issues: 1000
+linters-settings:
+  custom:
+    manioctypechecker:
+      path: ../../../bin/manioctypechecker.so
+      description: A static type checker for github.com/fuzmish/manioc
+      original-url: github.com/fuzmish/manioctypechecker
+linters:
+  disable-all: true
+  enable:
+    - manioctypechecker
+    - govet # if disable it, golangci-lint does not work

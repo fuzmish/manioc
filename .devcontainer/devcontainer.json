@@ -4,7 +4,8 @@
         "golang.Go",
         "mhutchie.git-graph",
         "eamodio.gitlens",
-        "ms-vscode.live-server"
+        "ms-vscode.live-server",
+        "redhat.vscode-yaml"
     ],
     "containerEnv": {
         "GIT_EDITOR": "code --wait"

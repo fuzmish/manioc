@@ -1,0 +1,22 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "./linter/manioctypechecker"
+        },
+        {
+            "name": "testdata/src/a",
+            "path": "./linter/manioctypechecker/testdata/src/a"
+        }
+    ],
+    "settings": {
+        "[go]": {
+            "editor.formatOnSave": true,
+            "editor.formatOnPaste": true,
+            "editor.foldingStrategy": "indentation"
+        },
+        "go.lintTool": "golangci-lint"
+    }
+}

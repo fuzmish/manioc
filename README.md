@@ -396,7 +396,10 @@ The *must*-variants; the helper functions `MustResolveInstance` and `MustResolve
     - `Unregister`
     - `Resolve` (`ResolveMany`, `MustResolve`, `MustResolveMany`)
   - It is unclear if this will be possible in future versions of Golang.
-  - To relieve this problem, we made a Linter that performs static type checking: [manioctypechecker](https://github.com/fuzmish/manioctypechecker)
+  - To relieve this problem, we made a Linter that performs static type checking: [manioctypechecker](./linter/manioctypechecker)
+    - Preview:  
+      ![screenshot-manioctypechecker.png](linter/manioctypechecker/docs/screenshot-manioctypechecker.png)
+    - For more detail, see [linter/manioctypechecker/README.md](./linter/manioctypechecker/README.md).
 - As of Golang 1.18, a struct cannot have methods with type parameters. It is why our APIs are in the form `Resolve[T](WithScope(scope))` instead of the form `scope.Resolve[T]()`. It is unclear if this can be improved in future Golang releases (cf. [golang/go#49085](https://github.com/golang/go/issues/49085)).
 
 ### Name and Logo
