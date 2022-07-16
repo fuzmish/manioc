@@ -312,12 +312,12 @@ The `Unregister` function returns `true` if one or more registrations were delet
 ### 10. Non-interface Types
 
 In the above discussion, we have illustrated how to register an interface type and its implementation. However, manioc accepts other types than these. The parameters accepted by each API are as follows:
-- `Register[T, U]`: It can be registered for any type `T`, where `U` is assignable to `T`.
-  - (Special Case): If `T` is an interface, `U` is also accepted as the type itself that implements `T` (i.e., not a pointer). In this case, `Register[T, U]` is equivalent to `Register[T, *U]`.
-- `RegisterConstructor[T, U](ctor U)`: It can be registered if for any type `T`, where `U` is the next function type:
-  - The return type of the function is `W` where `W` is assignable to `T`.
-  - The return type of the function is `(W, error)` where `W` is assignable to `T`.
-- `RegisterInstance[T](instance T)`: It can be registered for any type `T`, if the `instance` is assignable to type `T`.
+- `Register[T, U]`: `T` is an arbitrary type. You can register any type `U` that is assignable to `T`.
+  - (Special Case): If `T` is an interface type and `U` implements `T`, you can call it as `[T, U]` (which is equivalent to `[T, *U]`).
+- `RegisterConstructor[T, U](ctor U)`: `T` is an arbitrary type. You can register any function of type `U` with the following return types:
+  - Returns `W` where `W` is any type that is assignable to `T`.
+  - Returns `(W, error)` where `W` is any type that is assignable to `T`.
+- `RegisterInstance[T](instance T)`: `T` is an arbitrary type. You can pass any non-`nil` value to `instance` of any type that is assignable to `T`.
 - `Resolve[T]`: You can use any type that can be registered with the above functions.
 
 These behaviors will help you to use containers in more advanced ways. Here are some examples:
